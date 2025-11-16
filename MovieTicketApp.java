@@ -27,6 +27,7 @@ public class MovieTicketApp {
 
                 switch(choice){
                     case 1:
+                        customerManagement.customerMenu();
                         break;
                     case 2:
                         movieManagement.open();
