@@ -18,7 +18,8 @@ public class VenueManagement{
             System.out.println("3. Edit a venue");
             System.out.println("4. Delete a venue");
             System.out.println("5. Search venue");
-            System.out.println("6. Exit\n");
+            System.out.println("6. View specific venue details");
+             System.out.println("7. Exit");
             System.out.print("Choice: ");
             int choice =scanner.nextInt();
             scanner.nextLine();
@@ -39,12 +40,61 @@ public class VenueManagement{
                     searchVenue();
                     break;
                 case 6:
+                    viewVenueDetails();
+                    break;
+                case 7:
                     useVenue=false;
                     break;
                 default:
                     System.out.println("Invalid input, please try again.");
             }
 
+        }
+    }
+    public void viewVenueDetails() {
+        viewVenues();
+        System.out.print("\nEnter venue ID to view details: ");
+        int venueId = scanner.nextInt();
+        scanner.nextLine();
+
+        Venues venue = venuesDao.getVenueById(venueId);
+        if (venue == null) {
+            System.out.println("Venue not found!");
+            return;
+        }
+
+        boolean viewing = true;
+        while (viewing) {
+            System.out.println("\nVenue Details: " + venue.getVenue_name());
+            System.out.println("1. View Movies Screening Here");
+            System.out.println("2. View Ticket Sales");
+            System.out.println("3. View Rooms");
+            System.out.println("4. View Screening Schedule");
+            System.out.println("5. Back to Venue Menu");
+            System.out.print("Choice: ");
+            
+            int choice = scanner.nextInt();
+            scanner.nextLine();
+            
+            switch (choice) {
+                case 1:
+                    viewMoviesAtVenue(venueId);
+                    break;
+                case 2:
+                    viewTicketSales(venueId);
+                    break;
+                case 3:
+                    viewRoomsAtVenue(venueId);
+                    break;
+                case 4:
+                    viewScreeningSchedule(venueId);
+                    break;
+                case 5:
+                    viewing = false;
+                    break;
+                default:
+                    System.out.println("Invalid choice!");
+            }
         }
     }
 
@@ -179,5 +229,47 @@ public class VenueManagement{
 
             }
 
+        }
+
+        public void viewMoviesAtVenue(int venueId) {
+            System.out.println("\nMovies Screening at This Venue:");
+            ArrayList<String> movies = venuesDao.getMoviesByVenue(venueId);
+            if (movies.isEmpty()) {
+                System.out.println("No movies scheduled at this venue.");
+            } else {
+                for (String movie : movies) {
+                    System.out.println("  " + movie);
+                }
+            }
+        }
+
+        private void viewTicketSales(int venueId) {
+            System.out.println("\nTicket Sales");
+            int ticketsSold = venuesDao.getTicketsSoldByVenue(venueId);
+            System.out.println("Total tickets sold: " + ticketsSold);
+        }
+
+        private void viewRoomsAtVenue(int venueId) {
+            System.out.println("\nRooms in This Venue: ");
+            ArrayList<String> rooms = venuesDao.getRoomsByVenue(venueId);
+            if (rooms.isEmpty()) {
+                System.out.println("No rooms found in this venue.");
+            } else {
+                for (String room : rooms) {
+                    System.out.println("  " + room);
+                }
+            }
+        }
+
+        private void viewScreeningSchedule(int venueId) {
+            System.out.println("\nScreening Schedule:");
+            ArrayList<String> screenings = venuesDao.getScreeningsByVenue(venueId);
+            if (screenings.isEmpty()) {
+                System.out.println("No screenings scheduled at this venue.");
+            } else {
+                for (String screening : screenings) {
+                    System.out.println("  " + screening);
+                }
+            }
         }
 }
