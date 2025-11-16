@@ -35,7 +35,7 @@ public class Customers {
     }
 	
 	public String formatting() {
-    return String.format("ID: %d | Phone: %s | Username: %s",CustomerID, phoneNumber, Username);
+    return String.format("ID: %d | Phone: %s | Username: %s",customerID, phoneNumber, username);
 }
 
 
