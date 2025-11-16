@@ -6,13 +6,13 @@ import java.sql.Date;
 import java.sql.Time;
 
 
-public class MovieMenu 
+public class MovieManagement 
 {
     private MovieDao movieDao;
     private VenueManagement venueManagement;
     private Scanner scanner;
 
-    public MovieMenu(MovieDao movieDao, VenueManagement venueManagement, Scanner scanner) 
+    public MovieManagement(MovieDao movieDao, VenueManagement venueManagement, Scanner scanner) 
     {
         this.movieDao = movieDao;
         this.venueManagement = venueManagement;

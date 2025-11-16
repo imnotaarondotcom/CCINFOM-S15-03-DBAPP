@@ -6,6 +6,11 @@ public class MovieTicketApp {
     
     public static void main(String[] args) {
         boolean running = true;
+        CustomersManagement customerManagement = new CustomersManagement(scanner);
+        VenueManagement venueManagement = new VenueManagement(scanner);
+        MovieManagement movieManagement = new MovieManagement(new MovieDao(), venueManagement, scanner);
+        RoomManagement roomManagement = new RoomManagement();
+        SeatManagement seatManagement = new SeatManagement();
         while (running) {
 
                 System.out.println("Movie Ticket Management System");
@@ -22,22 +27,17 @@ public class MovieTicketApp {
 
                 switch(choice){
                     case 1:
-                        CustomersManagement customerManagement = new CustomersManagement(scanner);
                         break;
                     case 2:
-                        MovieMenu movieMenu = new MovieMenu(new MovieDao(), venueManagement, scanner);
-                        movieMenu.open();
+                        movieManagement.open();
                         break;
                     case 3:
-                        VenueManagement venueManagement = new VenueManagement(scanner);
                         venueManagement.venueMenu();
                         break;
                     case 4:
-                        RoomManagement roomManagement = new RoomManagement();
-                        roomManagement.showMenu();
+                        roomManagement.manageRoom();
                         break;
                     case 5:
-                        SeatManagement seatManagement = new SeatManagement();
                         seatManagement.manageSeat();
                         break;
                     case 6:
