@@ -1,0 +1,209 @@
+import java.util.ArrayList;
+import java.util.Scanner;
+
+public class MovieTicketApp {
+    private static VenuesDao venuesDao = new VenuesDao();
+    private static Scanner scanner = new Scanner(System.in);
+    
+    public static void main(String[] args) {
+        boolean running = true;
+        while (running) {
+
+                System.out.println("Movie Ticket Management System");
+                System.out.println("1. Venues");
+                System.out.println("2. Movie Management");
+                System.out.println("3. Customer Management");
+                System.out.println("4. Close app \n");
+                System.out.println("Choice: ");
+
+                int choice = scanner.nextInt();
+                scanner.nextLine();
+
+                switch(choice){
+                    case 1:
+                        venueMenu();
+                        break;
+
+                    case 4:
+                        System.out.println("System shutting down");
+                        running=false;
+                        break;
+                    default:
+                        System.out.println("Invalid input, please try again.");
+                }
+          
+            }
+        }
+
+    public static void venueMenu(){
+        boolean useVenue=true;
+        while(useVenue){
+            System.out.println("Venue Management:");
+            System.out.println("1. View venues");
+            System.out.println("2. Add a venue");
+            System.out.println("3. Edit a venue");
+            System.out.println("4. Delete a venue");
+            System.out.println("5. Search venue");
+            System.out.println("6. Exit\n");
+            System.out.print("Choice: ");
+            int choice =scanner.nextInt();
+            scanner.nextLine();
+            switch(choice){
+                case 1:
+                    viewVenues();
+                    break;
+                case 2:
+                    addVenue();
+                    break;
+                case 3:
+                    editVenue();
+                    break;
+                case 4:
+                    deleteVenue();
+                    break;
+                case 5: 
+                    searchVenue();
+                case 6:
+                    useVenue=false;
+                    break;
+                default:
+                    System.out.println("Invalid input, please try again.");
+            }
+
+        }
+    }
+
+        public static void viewVenues(){
+            ArrayList<Venues> venues = venuesDao.getAllVenues();
+            System.out.println("Displaying all venues:");
+            for(Venues venue:venues){
+                System.out.println(venue.formatting());
+            }
+        }
+
+        public static void addVenue(){
+            System.out.println("Enter new name: ");
+            String venue_name =scanner.nextLine();
+            System.out.println("Enter new address: ");
+            String address = scanner.nextLine();
+
+            Venues newVenue = new Venues(0, venue_name, address);
+            boolean added = venuesDao.addVenue(newVenue);
+
+            if(added){
+                System.out.println("A new venue has been added.");
+            }
+            else{
+                System.out.println("Error when adding a venue.");
+            }
+        }
+
+        public static void deleteVenue(){
+
+            viewVenues();
+            System.out.print("Enter venue ID to delete: ");
+            int venue_id= scanner.nextInt();
+            boolean deleted = venuesDao.deleteVenue(venue_id);
+
+            if (deleted){
+                System.out.println("Venue has been deleted.");
+            }
+            else{
+                System.out.println("Failed to delete venue.");
+            }
+        }
+
+        public static void searchVenue(){
+            System.out.print("Enter name of the location: ");
+            String venue_name= scanner.nextLine();
+            ArrayList<Venues> searchResults = venuesDao.searchVenueName(venue_name);
+            System.out.println("Showing results: ");
+            if(searchResults.isEmpty()){
+                System.out.println("Sorry, there are no results for: %s"+venue_name);
+            }
+            else{
+                for(Venues venues: searchResults){
+                    System.out.println(venues.formatting());
+                }
+            }
+        }
+
+        public static void editVenue(){
+
+            viewVenues();
+            System.out.println("Which venue would you like to edit: ");
+            int venue_id= scanner.nextInt();
+            scanner.nextLine();
+
+            Venues venue = venuesDao.getVenueById(venue_id);
+            if(venue==null){
+                System.out.println("Venue was not found.");
+            }
+            else{
+                System.out.println("What information would you like to edit: ");
+                System.out.println("1. Name");
+                System.out.println("2. Address\n");
+                System.out.print("Choice: ");
+                int toEdit= scanner.nextInt();
+                scanner.nextLine();
+                
+                switch(toEdit){
+                    case 1:
+                        System.out.print("Enter new name: ");
+                        String new_name = scanner.nextLine();
+                        if(!new_name.isEmpty()){
+                            if(new_name.equals(venue.getVenue_name())){
+                                System.out.println("ERROR: The new name cannot be the same as the old name.");
+                            }
+                            else{
+                                ArrayList<Venues> existing = venuesDao.searchVenueName(new_name);
+                                boolean same_name=false;
+                                for(Venues venues: existing){
+                                    if(venues.getVenue_id()!=venue_id){
+                                        same_name=true;
+                                    }
+                                }
+                                if(same_name==true){
+                                    System.out.println("ERROR: Another venue already has this name.");
+                                }
+                                else{
+                                    venue.setVenue_name(new_name);
+                                    boolean updated = venuesDao.updateVenue(venue);
+                                    if(updated==true){
+                                        System.out.println("Venue name updated successfully.");
+                                    }
+                                    else{
+                                        System.out.println("Failed to update venue name");
+                                    }
+                                }
+
+                            }
+                        }
+                    break;
+                    case 2:
+                        System.out.print("Enter new address: ");
+                        String new_address = scanner.nextLine();
+                        if(!new_address.isEmpty()){
+                            if(new_address.equals(venue.getAddress())){
+                                System.out.println("ERROR: The new address cannot be the same as the old address.");
+                            }
+                            else{
+                                venue.setAddress(new_address);
+                                boolean updated = venuesDao.updateVenue(venue);
+                                if (updated){
+                                     System.out.println("Venue address updated successfully.");
+                                }
+                                else{
+                                    System.out.println("Failed to update venue address");
+                                }
+                            }
+                        }
+                    default:
+                        System.out.println("Invalid choice, please try again");
+                }
+
+            }
+
+        }
+}
+    
