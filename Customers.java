@@ -1,38 +1,42 @@
-public class Customers{
+public class Customers {
 
+    private int customerID;
+    private String phoneNumber;
+    private String username;
 
-private int CustomerID;
-private String phoneNumber;
-private String Username;
+    public Customers(int customerID, String phoneNumber, String username) {
+        this.customerID = customerID;
+        this.phoneNumber = phoneNumber;
+        this.username = username;
+    }
 
-public Customers(int CustomerID, String phoneNumber, String Username){
-this.CustomerID=CustomerID;
-this.phoneNumber=phoneNumber;
-this.Username=Username;
+    public void setID(int customerID) {
+        this.customerID = customerID;
+    }
 
+    public void setNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public void setName(String username) {
+        this.username = username;
+    }
+
+    public int getID() {
+        return customerID;
+    }
+
+    public String getNumber() {
+        return phoneNumber;
+    }
+
+    public String getName() {
+        return username;
+    }
+	
+	public String formatting() {
+    return String.format("ID: %d | Phone: %s | Username: %s",CustomerID, phoneNumber, Username);
 }
 
-public void setID(int CustomerID){
-this.CustomerID=CustomerID;
-}
 
-public void setNumber(String phoneNumber){
-this.phoneNumber=phoneNumber;
 }
-
-public void setName(String Username){
-this.Username=Username;
-}
-
-public int getID(){
-return CustomerID;
-}
-
-public String getNumber(){
-return phoneNumber;
-}
-
-public String getName(){
-return Username;
-}
-
