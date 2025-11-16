@@ -1,217 +1,206 @@
 import java.util.ArrayList;
 import java.util.Scanner;
 
-public class MovieMenu
+public class MovieMenu 
 {
-    public static void main(String[] args)
+    private MovieDao movieDao;
+    private Scanner scanner;
+
+    public MovieMenu(MovieDao movieDao, Scanner scanner) 
     {
-        ArrayList<Movie> movies = new ArrayList<Movie>();
-        Scanner sc = new Scanner(System.in);
-        boolean exit = false;
+        this.movieDao = movieDao;
+        this.scanner = scanner;
+    }
 
-        System.out.println("\n-- Movie Records --");
+    public void open() 
+    {
+        boolean running = true;
 
-        while (!exit)
+        while (running) 
         {
-            System.out.println("\nSelect an action:");
-            System.out.println("[1] Add new movie");
-            System.out.println("[2] Edit movie");
-            System.out.println("[3] Delete movie");
-            System.out.println("[4] List movies");
-            System.out.println("[0] Exit");
+
+            System.out.println("\n=== MOVIE MANAGEMENT ===");
+            System.out.println("1. View movies");
+            System.out.println("2. Add movie");
+            System.out.println("3. Edit movie");
+            System.out.println("4. Delete movie");
+            System.out.println("5. Search movie");
+            System.out.println("6. Back");
             System.out.print("Enter choice: ");
 
-            int choice = sc.nextInt();
-            sc.nextLine(); // consume leftover newline
+            int choice = scanner.nextInt();
+            scanner.nextLine();
 
-            switch (choice)
+            switch (choice) 
             {
-                case 1:
-                    addRecord(movies, sc);
-                    break;
-                case 2:
-                    editMovie(movies, sc);
-                    break;
-                case 3:
-                    deleteMovie(movies, sc);
-                    break;
-                case 4:
-                    listMovies(movies);
-                    break;
-                case 0:
-                    exit = true;
-                    break;
-                default:
-                    System.out.println("Invalid selection.");
+                case 1 -> viewMovies();
+                case 2 -> addMovie();
+                case 3 -> editMovie();
+                case 4 -> deleteMovie();
+                case 5 -> searchMovie();
+                case 6 -> running = false;
+                default -> System.out.println("Invalid input, try again.");
             }
         }
-
-        sc.close();
     }
 
-    private static void addRecord(ArrayList<Movie> movies, Scanner sc)
+    // VIEW MOVIES
+    private void viewMovies() 
     {
-        System.out.println("\n[ADD NEW MOVIE]");
-
-        System.out.print("Movie name: ");
-        String movieName = sc.nextLine();
-
-        System.out.print("Genre: ");
-        String genre = sc.nextLine();
-
-        int ratingChoice = 0;
-        String ageRating = "";
-
-        while (ratingChoice < 1 || ratingChoice > 4)
-        {
-            System.out.println("Select age rating: ");
-            System.out.println("[1] G");
-            System.out.println("[2] PG");
-            System.out.println("[3] PG-13");
-            System.out.println("[4] R");
-            System.out.print("Enter: ");
-
-            ratingChoice = sc.nextInt();
-            sc.nextLine(); // consume newline
-
-            switch (ratingChoice)
-            {
-                case 1: ageRating = "G"; break;
-                case 2: ageRating = "PG"; break;
-                case 3: ageRating = "PG-13"; break;
-                case 4: ageRating = "R"; break;
-                default:
-                    System.out.println("Invalid selection.");
-            }
-        }
-
-        System.out.print("Duration (in minutes): ");
-        int duration = sc.nextInt();
-        sc.nextLine(); // consume newline
-
-        Movie newMovie = new Movie(movieName, genre, ageRating, duration);
-        movies.add(newMovie);
-
-        System.out.println("Movie added successfully!");
-        System.out.println(newMovie);
-    }
-
-    private static void listMovies(ArrayList<Movie> movies)
-    {
+        ArrayList<Movie> movies = movieDao.getAllMovies();
         System.out.println("\n--- MOVIE LIST ---");
-        if (movies.isEmpty())
+
+        if (movies.isEmpty()) 
         {
             System.out.println("No movies found.");
             return;
         }
 
-        for (Movie m : movies)
+        for (Movie m : movies) 
         {
-            System.out.println(m);
+            System.out.println(m.toString());
         }
     }
 
-    private static Movie findMovieById(ArrayList<Movie> movies, int id)
+    // ADD MOVIE
+    private void addMovie() 
     {
-        for (Movie m : movies)
-        {
-            if (m.getMovieId() == id)
-                return m;
-        }
-        return null; // not found
+        System.out.println("\n[ADD MOVIE]");
+
+        System.out.print("Movie name: ");
+        String name = scanner.nextLine();
+
+        System.out.print("Genre: ");
+        String genre = scanner.nextLine();
+
+        String rating = getAgeRatingInput();
+
+        System.out.print("Duration (minutes): ");
+        int duration = scanner.nextInt();
+        scanner.nextLine();
+
+        Movie movie = new Movie(0, name, genre, rating, duration);
+        boolean added = movieDao.addMovie(movie);
+
+        if (added)
+            System.out.println("Movie added!");
+        else
+            System.out.println("Error adding movie.");
     }
 
-    private static void editMovie(ArrayList<Movie> movies, Scanner sc)
+    private String getAgeRatingInput() 
     {
-        System.out.println("\n[EDIT MOVIE]");
-        if (movies.isEmpty())
+        while (true) 
         {
-            System.out.println("No movies to edit.");
-            return;
-        }
-
-        listMovies(movies);
-
-        System.out.print("Enter the Movie ID to edit: ");
-        int id = sc.nextInt();
-        sc.nextLine(); // consume newline
-
-        Movie movie = findMovieById(movies, id);
-        if (movie == null)
-        {
-            System.out.println("Movie with ID " + id + " not found.");
-            return;
-        }
-
-        System.out.print("New name (leave blank to keep '" + movie.getMovieName() + "'): ");
-        String name = sc.nextLine();
-        if (!name.isEmpty()) movie.setMovieName(name);
-
-        System.out.print("New genre (leave blank to keep '" + movie.getGenre() + "'): ");
-        String genre = sc.nextLine();
-        if (!genre.isEmpty()) movie.setGenre(genre);
-
-        int ratingChoice = 0;
-        while (true)
-        {
-            System.out.println("Select new age rating (leave 0 to keep '" + movie.getAgeRating() + "'):");
+            System.out.println("Select age rating:");
             System.out.println("[1] G");
             System.out.println("[2] PG");
             System.out.println("[3] PG-13");
             System.out.println("[4] R");
             System.out.print("Enter: ");
 
-            ratingChoice = sc.nextInt();
-            sc.nextLine(); // consume newline
+            int choice = scanner.nextInt();
+            scanner.nextLine();
 
-            if (ratingChoice == 0) break;
-
-            switch (ratingChoice)
+            return switch (choice) 
             {
-                case 1: movie.setAgeRating("G"); break;
-                case 2: movie.setAgeRating("PG"); break;
-                case 3: movie.setAgeRating("PG-13"); break;
-                case 4: movie.setAgeRating("R"); break;
-                default:
-                    System.out.println("Invalid selection.");
-                    continue;
-            }
-            break;
+                case 1 -> "G";
+                case 2 -> "PG";
+                case 3 -> "PG-13";
+                case 4 -> "R";
+                default -> {
+                    System.out.println("Invalid rating. Try again.");
+                    yield null;
+                }
+            };
         }
-
-        System.out.print("New duration in minutes (enter 0 to keep '" + movie.getDuration() + "'): ");
-        int duration = sc.nextInt();
-        sc.nextLine();
-        if (duration > 0) movie.setDuration(duration);
-
-        System.out.println("Movie updated successfully!");
-        System.out.println(movie);
     }
 
-    private static void deleteMovie(ArrayList<Movie> movies, Scanner sc)
+    // DELETE MOVIE
+    private void deleteMovie() 
     {
         System.out.println("\n[DELETE MOVIE]");
-        if (movies.isEmpty())
+        viewMovies();
+        System.out.print("\nEnter movie ID to delete: ");
+        int id = scanner.nextInt();
+        scanner.nextLine();
+
+        boolean deleted = movieDao.deleteMovie(id);
+
+        if (deleted)
+            System.out.println("Movie deleted.");
+        else
+            System.out.println("Failed to delete movie.");
+    }
+
+    // SEARCH MOVIE BY NAME
+    private void searchMovie() 
+    {
+        System.out.println("\n[SEARCH MOVIE]");
+        System.out.print("Search movie name: ");
+        String name = scanner.nextLine();
+
+        ArrayList<Movie> results = movieDao.searchMovieName(name);
+
+        System.out.println("\n== RESULTS ==");
+        if (results.isEmpty())
+            System.out.println("No matching movies.");
+        else
+            results.forEach(m -> System.out.println(m.toString()));
+    }
+
+    // EDIT MOVIE
+    private void editMovie() 
+    {
+        System.out.println("\n[EDIT MOVIE]");
+        viewMovies();
+
+        System.out.print("\nEnter movie ID to edit: ");
+        int id = scanner.nextInt();
+        scanner.nextLine();
+
+        Movie movie = movieDao.getMovieById(id);
+        if (movie == null) 
         {
-            System.out.println("No movies to delete.");
+            System.out.println("Movie not found.");
             return;
         }
 
-        listMovies(movies);
+        System.out.println("What do you want to edit?");
+        System.out.println("1. Name");
+        System.out.println("2. Genre");
+        System.out.println("3. Age Rating");
+        System.out.println("4. Duration");
+        System.out.print("Choice: ");
 
-        System.out.print("Enter the Movie ID to delete: ");
-        int id = sc.nextInt();
-        sc.nextLine(); // consume newline
+        int choice = scanner.nextInt();
+        scanner.nextLine();
 
-        Movie movie = findMovieById(movies, id);
-        if (movie == null)
+        switch (choice) 
         {
-            System.out.println("Movie with ID " + id + " not found.");
-            return;
+            case 1 -> {
+                System.out.print("Enter new name: ");
+                movie.setMovieName(scanner.nextLine());
+            }
+            case 2 -> {
+                System.out.print("Enter new genre: ");
+                movie.setGenre(scanner.nextLine());
+            }
+            case 3 -> movie.setAgeRating(getAgeRatingInput());
+            case 4 -> {
+                System.out.print("New duration: ");
+                movie.setDuration(scanner.nextInt());
+                scanner.nextLine();
+            }
+            default -> {
+                System.out.println("Invalid choice.");
+                return;
+            }
         }
 
-        movie.decrementNextId();
-        movies.remove(movie);
-        System.out.println("Movie '" + movie.getMovieName() + "' deleted successfully!");
+        boolean updated = movieDao.updateMovie(movie);
+
+        if (updated) System.out.println("Movie updated!");
+        else System.out.println("Failed to update movie.");
     }
 }

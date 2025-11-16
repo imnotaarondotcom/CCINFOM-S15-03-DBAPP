@@ -23,6 +23,10 @@ public class MovieTicketApp {
                     case 1:
                         venueMenu();
                         break;
+                    case 2:
+                        MovieMenu movieMenu = new MovieMenu(new MovieDao(), scanner);
+                        movieMenu.open();
+                        break;
 
                     case 4:
                         System.out.println("System shutting down");

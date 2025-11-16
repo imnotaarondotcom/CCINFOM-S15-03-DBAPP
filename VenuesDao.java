@@ -8,7 +8,7 @@ public class VenuesDao{
     public boolean addVenue(Venues venue) {
         String command = "INSERT INTO Venues (venue_name, address) VALUES (?, ?)";
         
-        try (Connection connect = ConnectToDB.getConnection();
+        try (Connection connect = DBConnection.getConnection();
              PreparedStatement statement = connect.prepareStatement(command, Statement.RETURN_GENERATED_KEYS)) {
             
             statement.setString(1, venue.getVenue_name());
@@ -36,7 +36,7 @@ public class VenuesDao{
         ArrayList<Venues> venues = new ArrayList<>();
         String command = "SELECT * FROM Venues ORDER BY venue_id";
         
-        try (Connection connection = ConnectToDB.getConnection();
+        try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(command);
              ResultSet rs = statement.executeQuery()) {
             
@@ -58,7 +58,7 @@ public class VenuesDao{
     public Venues getVenueById(int venueId) {
         String command = "SELECT * FROM Venues WHERE venue_id = ?";
         
-        try (Connection connection = ConnectToDB.getConnection();
+        try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(command)) {
             
             statement.setInt(1, venueId);
@@ -81,7 +81,7 @@ public class VenuesDao{
     public boolean updateVenue(Venues venue) {
         String command = "UPDATE Venues SET venue_name = ?, address = ? WHERE venue_id = ?";
         
-        try (Connection conn = ConnectToDB.getConnection();
+        try (Connection conn = DBConnection.getConnection();
              PreparedStatement statement = conn.prepareStatement(command)) {
             
             statement.setString(1, venue.getVenue_name());
@@ -101,7 +101,7 @@ public class VenuesDao{
     public boolean deleteVenue(int venueId) {
         String command = "DELETE FROM Venues WHERE venue_id = ?";
         
-        try (Connection connection = ConnectToDB.getConnection();
+        try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(command)) {
             
             statement.setInt(1, venueId);
@@ -119,7 +119,7 @@ public class VenuesDao{
         ArrayList<Venues> venues = new ArrayList<>();
         String command = "SELECT * FROM Venues WHERE venue_name LIKE ? ORDER BY venue_name";
         
-        try (Connection connection = ConnectToDB.getConnection();
+        try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(command)) {
             
             statement.setString(1, "%" + namePattern + "%");
