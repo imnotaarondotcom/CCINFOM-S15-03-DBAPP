@@ -58,6 +58,30 @@ public class RoomDao {
         }
     }
 
+    // VIEW ALL ROOMS
+    public ArrayList<Room> getAllRooms() {
+        ArrayList<Room> list = new ArrayList<>();
+        String sql = "SELECT * FROM Rooms";
+
+        try (Connection conn = DBConnection.getConnection();
+            Statement st = conn.createStatement();
+            ResultSet rs = st.executeQuery(sql)) {
+
+            while (rs.next()) {
+                list.add(new Room(
+                        rs.getInt("room_id"),
+                        rs.getString("room_name"),
+                        rs.getString("room_type"),
+                        rs.getInt("venue_id")
+                ));
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error retrieving rooms: " + e.getMessage());
+        }
+        return list;
+    }
+
     // VIEW ROOMS WITH TICKET BOOKING COUNT
     public ArrayList<String> getRoomsWithTicketCount() {
         ArrayList<String> list = new ArrayList<>();
