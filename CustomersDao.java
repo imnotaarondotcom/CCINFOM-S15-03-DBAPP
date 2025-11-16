@@ -7,7 +7,7 @@ public class CustomersDao {
         ArrayList<Customers> customers = new ArrayList<>();
         String command = "SELECT * FROM Customers ORDER BY customer_id";
 
-        try (Connection connection = ConnectToDB.getConnection();
+        try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(command);
              ResultSet rs = statement.executeQuery()) {
 
@@ -31,7 +31,7 @@ public class CustomersDao {
     public boolean addCustomer(Customers customer) {
         String command = "INSERT INTO Customers (phone_number, username) VALUES (?, ?)";
 
-        try (Connection connect = ConnectToDB.getConnection();
+        try (Connection connect = DBConnection.getConnection();
              PreparedStatement statement = connect.prepareStatement(command, Statement.RETURN_GENERATED_KEYS)) {
 
             statement.setString(1, customer.getNumber());
@@ -58,7 +58,7 @@ public class CustomersDao {
     public boolean updateCustomer(Customers customer) {
         String command = "UPDATE Customers SET phone_number = ?, username = ? WHERE customer_id = ?";
 
-        try (Connection conn = ConnectToDB.getConnection();
+        try (Connection conn = DBConnection.getConnection();
              PreparedStatement statement = conn.prepareStatement(command)) {
 
             statement.setString(1, customer.getNumber());
@@ -79,7 +79,7 @@ public class CustomersDao {
     public boolean deleteCustomer(int customerId) {
         String command = "DELETE FROM Customers WHERE customer_id = ?";
 
-        try (Connection connection = ConnectToDB.getConnection();
+        try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(command)) {
 
             statement.setInt(1, customerId);
@@ -98,7 +98,7 @@ public class CustomersDao {
     public Customers getCustomerById(int id) {
         String command = "SELECT * FROM Customers WHERE customer_id = ?";
 
-        try (Connection connection = ConnectToDB.getConnection();
+        try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(command)) {
 
             statement.setInt(1, id);
