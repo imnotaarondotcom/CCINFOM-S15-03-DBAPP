@@ -46,7 +46,7 @@ public class CustomersManagement {
         String name = scanner.nextLine();
 
         Customers newCustomer = new Customers(0, number, name);
-        boolean added = customersDao.addCustomers(newCustomer);
+        boolean added = customersDao.addCustomer(newCustomer);
 
         if (added) System.out.println("Customer added.");
         else System.out.println("Error adding customer.");

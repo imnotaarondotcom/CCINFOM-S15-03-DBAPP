@@ -98,6 +98,18 @@ public class VenueManagement{
         }
     }
 
+        public ArrayList<Venues> getAllVenues(){
+            return venuesDao.getAllVenues();
+        }
+
+        public Venues getVenueById(int venueId){
+            return venuesDao.getVenueById(venueId);
+        }
+
+        public ArrayList<String> getRoomsByVenue(int venueId){
+            return venuesDao.getRoomsByVenue(venueId);
+        }
+
         public void viewVenues(){
             ArrayList<Venues> venues = venuesDao.getAllVenues();
             System.out.println("Displaying all venues:");
@@ -249,7 +261,7 @@ public class VenueManagement{
             System.out.println("Total tickets sold: " + ticketsSold);
         }
 
-        private void viewRoomsAtVenue(int venueId) {
+        public void viewRoomsAtVenue(int venueId) {
             System.out.println("\nRooms in This Venue: ");
             ArrayList<String> rooms = venuesDao.getRoomsByVenue(venueId);
             if (rooms.isEmpty()) {

@@ -24,7 +24,7 @@ public class MovieTicketApp {
                         venueManagement.venueMenu();
                         break;
                     case 2:
-                        MovieMenu movieMenu = new MovieMenu(new MovieDao(), scanner);
+                        MovieMenu movieMenu = new MovieMenu(new MovieDao(), venueManagement, scanner);
                         movieMenu.open();
                         break;
 

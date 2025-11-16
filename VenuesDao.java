@@ -171,7 +171,7 @@ public class VenuesDao{
 
 public ArrayList<String> getRoomsByVenue(int venueId) {
     ArrayList<String> rooms = new ArrayList<>();
-    String command = "SELECT room_id, room_name, room_type FROM Rooms WHERE venue_id = ? ORDER BY room_name";
+    String command = "SELECT room_id, room_name, room_type FROM Rooms WHERE venue_id = ? ORDER BY room_id";
     
     try (Connection connection = DBConnection.getConnection();
          PreparedStatement statement = connection.prepareStatement(command)) {
