@@ -1,0 +1,121 @@
+import java.sql.*;
+import java.util.ArrayList;
+
+public class CustomersDao {
+
+    public ArrayList<Customers> getAllCustomers() {
+        ArrayList<Customers> customers = new ArrayList<>();
+        String command = "SELECT * FROM Customers ORDER BY customer_id";
+
+        try (Connection connection = ConnectToDB.getConnection();
+             PreparedStatement statement = connection.prepareStatement(command);
+             ResultSet rs = statement.executeQuery()) {
+
+            while (rs.next()) {
+                int id = rs.getInt("customer_id");
+                String number = rs.getString("phone_number");
+                String username = rs.getString("username");
+
+                Customers customer = new Customers(id, number, username);
+                customers.add(customer);
+            }
+
+        } catch (SQLException error) {
+            System.out.println("Error getting customers: " + error.getMessage());
+        }
+
+        return customers;
+    }
+
+
+    public boolean addCustomer(Customers customer) {
+        String command = "INSERT INTO Customers (phone_number, username) VALUES (?, ?)";
+
+        try (Connection connect = ConnectToDB.getConnection();
+             PreparedStatement statement = connect.prepareStatement(command, Statement.RETURN_GENERATED_KEYS)) {
+
+            statement.setString(1, customer.getNumber());
+            statement.setString(2, customer.getName());
+
+            int updated = statement.executeUpdate();
+
+            if (updated > 0) {
+                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        customer.setID(generatedKeys.getInt(1));
+                    }
+                }
+                return true;
+            }
+
+        } catch (SQLException error) {
+            System.out.println("Error adding customer: " + error.getMessage());
+        }
+
+        return false;
+    }
+
+    public boolean updateCustomer(Customers customer) {
+        String command = "UPDATE Customers SET phone_number = ?, username = ? WHERE customer_id = ?";
+
+        try (Connection conn = ConnectToDB.getConnection();
+             PreparedStatement statement = conn.prepareStatement(command)) {
+
+            statement.setString(1, customer.getNumber());
+            statement.setString(2, customer.getName());
+            statement.setInt(3, customer.getID());
+
+            int updated = statement.executeUpdate();
+            return updated > 0;
+
+        } catch (SQLException error) {
+            System.out.println("Error updating customer: " + error.getMessage());
+        }
+
+        return false;
+    }
+
+
+    public boolean deleteCustomer(int customerId) {
+        String command = "DELETE FROM Customers WHERE customer_id = ?";
+
+        try (Connection connection = ConnectToDB.getConnection();
+             PreparedStatement statement = connection.prepareStatement(command)) {
+
+            statement.setInt(1, customerId);
+            int updated = statement.executeUpdate();
+
+            return updated > 0;
+
+        } catch (SQLException error) {
+            System.out.println("Error deleting customer: " + error.getMessage());
+        }
+
+        return false;
+    }
+
+
+    public Customers getCustomerById(int id) {
+        String command = "SELECT * FROM Customers WHERE customer_id = ?";
+
+        try (Connection connection = ConnectToDB.getConnection();
+             PreparedStatement statement = connection.prepareStatement(command)) {
+
+            statement.setInt(1, id);
+            ResultSet rs = statement.executeQuery();
+
+            if (rs.next()) {
+                return new Customers(
+                        rs.getInt("customer_id"),
+                        rs.getString("phone_number"),
+                        rs.getString("username")
+                );
+            }
+
+        } catch (SQLException error) {
+            System.out.println("Error getting customer: " + error.getMessage());
+        }
+
+        return null;
+    }
+}
