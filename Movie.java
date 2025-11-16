@@ -1,37 +1,36 @@
-public class Movie
+public class Movie 
 {
-    private final int MOVIE_ID;
-    private final String MOVIE_NAME;
-    private final String GENRE;
-    private final int AGE_RATING;
+    private static int nextId = 1;
 
-    public Movie(movieId, movieName, genre, ageRating)
+    private int movieId;
+    private String movieName;
+    private String genre;
+    private String ageRating;
+    private int duration;
+
+    public Movie(String movieName, String genre, String ageRating, int duration)
     {
-        MOVIE_ID = movieiD;
-        MOVIE_NAME = movieName;
-        GENRE = genre;
-        AGE_RATING = ageRating;
+        this.movieId = nextId++;
+        this.movieName = movieName;
+        this.genre = genre;
+        this.ageRating = ageRating;
+        this.duration = duration;
     }
 
-    public int getMovieId()
-    {
-        return MOVIE_ID;
-    }
+    public int getMovieId(){ return movieId; }
+    public String getMovieName(){ return movieName; }
+    public String getGenre(){ return genre; }
+    public String getAgeRating(){ return ageRating; }
+    public int getDuration(){ return duration; }
 
-    public String getMovieName()
-    {
-        return MOVIE_NAME;
-    }
+    public void setMovieId(int movieId){ this.movieId = movieId; }
+    public void setMovieName(String movieName){ this.movieName = movieName; }
+    public void setGenre(String genre){ this.genre = genre; }
+    public void setAgeRating(String ageRating){ this.ageRating = ageRating; }
+    public void setDuration(int duration){ this.duration = duration; }
 
-    public String getGenre()
-    {
-        return GENRE;
-    }
+    public void decrementNextId(){ nextId--; }
 
-    public int getAgeRating()
-    {
-        return AGE_RATING;
-    }
-
-
+    @Override
+    public String toString() { return "[ID: " + movieId + "] " + movieName + " (" + genre + ", " + ageRating + ", " + duration + " mins)"; }
 }
