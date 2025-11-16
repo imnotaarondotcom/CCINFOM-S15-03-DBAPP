@@ -15,6 +15,11 @@ public class Movie
         this.genre = genre;
         this.ageRating = ageRating;
         this.duration = duration;
+        this.movieId = nextId++;
+        this.movieName = movieName;
+        this.genre = genre;
+        this.ageRating = ageRating;
+        this.duration = duration;
     }
 
     public int getMovieId(){ return movieId; }
