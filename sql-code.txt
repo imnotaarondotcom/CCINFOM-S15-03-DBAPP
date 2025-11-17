@@ -1,0 +1,114 @@
+CREATE DATABASE IF NOT EXISTS movie_ticket_management;
+USE movie_ticket_management;
+
+CREATE TABLE Movies(
+movie_id INT PRIMARY KEY AUTO_INCREMENT,
+movie_name VARCHAR(45),
+genre VARCHAR(45),
+age_rating ENUM('G','PG','PG-13','R'),
+duration INT
+);
+
+CREATE TABLE Customers(
+customer_id INT PRIMARY KEY AUTO_INCREMENT,
+phone_number VARCHAR(11),
+username VARCHAR(45), 
+account_type ENUM('Admin','Customer'),
+user_password VARCHAR(255)
+);
+
+CREATE TABLE Venues(
+venue_id INT PRIMARY KEY AUTO_INCREMENT,
+venue_name VARCHAR(45),
+address VARCHAR(100)
+);
+
+CREATE TABLE Rooms(
+room_id INT PRIMARY KEY AUTO_INCREMENT,
+room_name VARCHAR(45),
+room_type ENUM('Standard','IMAX','VIP'),
+venue_id INT,
+FOREIGN KEY(venue_id) REFERENCES Venues(venue_id)
+);
+
+CREATE TABLE Seats(
+seat_id INT PRIMARY KEY AUTO_INCREMENT,
+seat_no VARCHAR(5),
+room_id int,
+FOREIGN KEY(room_id) REFERENCES Rooms(room_id)
+);
+
+CREATE TABLE Screenings(
+screening_id INT PRIMARY KEY AUTO_INCREMENT,
+movie_id INT,
+venue_id INT,
+room_id INT,
+screening_date DATE,
+screening_start_time TIME,
+screening_end_time TIME,
+is_vacant BOOLEAN DEFAULT TRUE,
+FOREIGN KEY(movie_id) REFERENCES Movies(movie_id),
+FOREIGN KEY(venue_id) REFERENCES Venues(venue_id),
+FOREIGN KEY(room_id) REFERENCES Rooms(room_id)
+);
+
+CREATE TABLE TicketBookings(
+ticket_no INT PRIMARY KEY AUTO_INCREMENT,
+price DECIMAL(8,2),
+ticket_status ENUM('Booked','Canceled','Refunded'),
+seat_id INT,
+date_booked DATETIME,
+customer_id INT,
+screening_id INT,
+FOREIGN KEY(customer_id) REFERENCES Customers(customer_id),
+FOREIGN KEY(screening_id) REFERENCES Screenings(screening_id),
+FOREIGN KEY(seat_id) REFERENCES Seats(seat_id)
+);
+
+INSERT INTO Movies (movie_name, genre, age_rating, duration) VALUES
+('A Minecraft Movie', 'Adventure', 'PG', 105),
+('Avengers: Endgame', 'Action', 'PG-13', 181),
+('Frozen', 'Animation', 'G', 102),
+('Spider-Man: No Way Home','Action','PG-13', 148),
+('Chainsaw Man: The Movie – Reze Arc','Action','R', 110),
+('Oppenheimer', 'Biography', 'R', 180),
+('Barbie', 'Comedy', 'PG-13', 114),
+('Demon Slayer: Infinity Castle', 'Action', 'R', 130),
+('Superman', 'Action', 'PG-13', 135),
+('Deadpool & Wolverine', 'Action', 'R', 126);
+
+INSERT INTO Customers (phone_number, username, account_type, user_password) VALUES
+('09171234567', 'john_doe', 'Admin', 'password123'),
+('09172345678', 'jane_smith', 'Customer', 'janespass'),
+('09173456789', 'mike_jones', 'Customer', 'mike1234'),
+('09174567890', 'sarah_wilson', 'Customer', 'sarahpw'),
+('09175678901', 'david_brown', 'Customer', 'david321'),
+('09176789012', 'lisa_garcia', 'Customer', 'lisa789'),
+('09177890123', 'robert_taylor', 'Customer', 'robertpw'),
+('09178901234', 'emily_clark', 'Customer', 'emily2025'),
+('09179012345', 'kevin_martin', 'Customer', 'kevinpass'),
+('09170123456', 'amanda_lee', 'Customer', 'amanda00');
+
+INSERT INTO Venues (venue_name, address) VALUES 
+('MOA Cinema', 'SM Mall of Asia, Seaside Blvd'),
+('SM Megamall Cinema', 'EDSA corner Doña Julia Vargas Ave.'),
+('Cash&Carry Cinema', 'Cash & Carry Mall, 1200 Filmore St, Makati City');
+
+INSERT INTO Rooms (room_name, room_type, venue_id) VALUES
+('Cinema 1', 'Standard', 1),
+('Cinema 2', 'Standard', 1),
+('IMAX Theater', 'IMAX', 1),
+('VIP Room A', 'VIP', 1),
+('4DX Cinema', 'Standard', 1),
+
+('Theater 1', 'Standard', 2),
+('Theater 2', 'Standard', 2),
+('Director''s Club', 'VIP', 2),
+('IMAX Experience', 'IMAX', 2),
+('Premiere Room', 'Standard', 2),
+
+('Main Hall', 'Standard', 3),
+('Premium Room', 'VIP', 3),
+('Screen 3', 'Standard', 3),
+('Dolby Cinema', 'Standard', 3),
+('Family Room', 'Standard', 3);
