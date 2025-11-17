@@ -15,8 +15,9 @@ public class CustomersDao {
                 int id = rs.getInt("customer_id");
                 String number = rs.getString("phone_number");
                 String username = rs.getString("username");
+                String password = rs.getString("user_password");
 
-                Customers customer = new Customers(id, number, username);
+                Customers customer = new Customers(id, number, username, password);
                 customers.add(customer);
             }
 
@@ -29,13 +30,14 @@ public class CustomersDao {
 
 
     public boolean addCustomer(Customers customer) {
-        String command = "INSERT INTO Customers (phone_number, username) VALUES (?, ?)";
+        String command = "INSERT INTO Customers (phone_number, username, user_password) VALUES (?, ?, ?)";
 
         try (Connection connect = DBConnection.getConnection();
-             PreparedStatement statement = connect.prepareStatement(command, Statement.RETURN_GENERATED_KEYS)) {
+            PreparedStatement statement = connect.prepareStatement(command, Statement.RETURN_GENERATED_KEYS)) {
 
             statement.setString(1, customer.getNumber());
             statement.setString(2, customer.getName());
+            statement.setString(3, customer.getPassword());
 
             int updated = statement.executeUpdate();
 
@@ -56,14 +58,15 @@ public class CustomersDao {
     }
 
     public boolean updateCustomer(Customers customer) {
-        String command = "UPDATE Customers SET phone_number = ?, username = ? WHERE customer_id = ?";
+        String command = "UPDATE Customers SET phone_number = ?, username = ?, user_password = ? WHERE customer_id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement statement = conn.prepareStatement(command)) {
 
             statement.setString(1, customer.getNumber());
             statement.setString(2, customer.getName());
-            statement.setInt(3, customer.getID());
+            statement.setString(3, customer.getPassword());
+            statement.setInt(4, customer.getID());
 
             int updated = statement.executeUpdate();
             return updated > 0;
@@ -108,7 +111,8 @@ public class CustomersDao {
                 return new Customers(
                         rs.getInt("customer_id"),
                         rs.getString("phone_number"),
-                        rs.getString("username")
+                        rs.getString("username"),
+                        rs.getString("user_password")
                 );
             }
 

@@ -175,6 +175,8 @@ public class MovieManagement
             return;
         }
 
+        System.out.println(movie.toString());
+
         System.out.println("What do you want to edit?");
         System.out.println("1. Name");
         System.out.println("2. Genre");

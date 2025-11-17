@@ -3,11 +3,13 @@ public class Customers {
     private int customerID;
     private String phoneNumber;
     private String username;
+    private String password;
 
-    public Customers(int customerID, String phoneNumber, String username) {
+    public Customers(int customerID, String phoneNumber, String username, String password) {
         this.customerID = customerID;
         this.phoneNumber = phoneNumber;
         this.username = username;
+        this.password = password;
     }
 
     public void setID(int customerID) {
@@ -22,6 +24,10 @@ public class Customers {
         this.username = username;
     }
 
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     public int getID() {
         return customerID;
     }
@@ -34,8 +40,12 @@ public class Customers {
         return username;
     }
 	
+    public String getPassword() {
+        return password;
+    }
+
 	public String formatting() {
-    return String.format("ID: %d | Phone: %s | Username: %s",customerID, phoneNumber, username);
+    return String.format("ID: %d | Phone: %s | Username: %s | Password: %s",customerID, phoneNumber, username, password);
 }
 
 
