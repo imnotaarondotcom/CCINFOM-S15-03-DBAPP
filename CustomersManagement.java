@@ -43,19 +43,40 @@ public class CustomersManagement {
         String number = scanner.nextLine();
 
         System.out.print("Enter Username: ");
-        String name = scanner.nextLine();
+        String username = scanner.nextLine();
+
+        String accountType = getAccountTypeInput();
 
         System.out.print("Enter Password: ");
         String password = scanner.nextLine();
 
-        Customers newCustomer = new Customers(0, number, name, password);
+        Customers newCustomer = new Customers(0, number, username, accountType, password);
         boolean added = customersDao.addCustomer(newCustomer);
 
         if (added) System.out.println("Customer added.");
         else System.out.println("Error adding customer.");
     }
 
+    public String getAccountTypeInput() {
+        while (true) 
+        {
+            System.out.println("Select account type:");
+            System.out.println("[1] Admin");
+            System.out.println("[2] Customer");
+            System.out.print("Enter: ");
 
+            int choice = scanner.nextInt();
+            scanner.nextLine();
+
+            switch (choice) 
+            {
+                case 1: return "Admin";
+                case 2: return "Customer";
+                default: 
+                    System.out.println("Invalid account type. Try again.");
+            }
+        }
+    }
 
     public void deleteCustomer() {
         viewCustomers();
@@ -88,7 +109,8 @@ public class CustomersManagement {
         System.out.println("What do you want to edit?");
         System.out.println("1. Username");
         System.out.println("2. Phone number");
-        System.out.println("3. Password");
+        System.out.println("3. Account type");
+        System.out.println("4. Password");
         System.out.print("Choice: ");
 
         int choice = scanner.nextInt();
@@ -104,7 +126,8 @@ public class CustomersManagement {
                 System.out.print("New phone number: ");
                 customer.setNumber(scanner.nextLine());
             }
-            case 3 -> {
+            case 3 -> customer.setAccountType(getAccountTypeInput());
+            case 4 -> {
                 System.out.print("Enter old password: ");
 
                 if (!customer.getPassword().equals(scanner.nextLine())) {

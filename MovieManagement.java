@@ -111,17 +111,15 @@ public class MovieManagement
             int choice = scanner.nextInt();
             scanner.nextLine();
 
-            return switch (choice) 
+            switch (choice) 
             {
-                case 1 -> "G";
-                case 2 -> "PG";
-                case 3 -> "PG-13";
-                case 4 -> "R";
-                default -> {
+                case 1: return "G";
+                case 2: return "PG";
+                case 3: return "PG-13";
+                case 4: return "R";
+                default:
                     System.out.println("Invalid rating. Try again.");
-                    yield null;
-                }
-            };
+            }
         }
     }
 
