@@ -126,4 +126,30 @@ public class CustomersDao {
 
         return null;
     }
+
+    public Customers getCustomerByUsername(String username) {
+        String command = "SELECT * FROM Customers WHERE username = ?";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(command)) {
+
+            statement.setString(1, username);
+            ResultSet rs = statement.executeQuery();
+
+            if (rs.next()) {
+                return new Customers(
+                        rs.getInt("customer_id"),
+                        rs.getString("phone_number"),
+                        rs.getString("username"),
+                        rs.getString("account_type"),
+                        rs.getString("user_password")
+                );
+            }
+
+        } catch (SQLException error) {
+            System.out.println("Error getting customer: " + error.getMessage());
+        }
+
+        return null;
+    }
 }
