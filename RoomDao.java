@@ -144,11 +144,11 @@ public class RoomDao {
     // VIEW ROOMS WITH MOVIE SCREENING INFORMATION
     public ArrayList<String> getRoomsWithMovieInfo() {
         ArrayList<String> list = new ArrayList<>();
-        String sql = "SELECT r.room_id, r.room_name, m.title AS movie_title, s.screening_date, s.screening_time " +
+        String sql = "SELECT r.room_id, r.room_name, m.movie_name AS movie_name, s.screening_date, s.screening_start_time " +
                     "FROM Rooms r " +
                     "JOIN Screenings s ON r.room_id = s.room_id " +
                     "JOIN Movies m ON s.movie_id = m.movie_id " +
-                    "ORDER BY s.screening_date, s.screening_time";
+                    "ORDER BY s.screening_date, s.screening_start_time";
 
         try (Connection conn = DBConnection.getConnection();
             Statement st = conn.createStatement();
@@ -157,9 +157,9 @@ public class RoomDao {
             while (rs.next()) {
                 String info = String.format("Room: %s | Movie: %s | Date: %s | Time: %s",
                         rs.getString("room_name"),
-                        rs.getString("movie_title"),
+                        rs.getString("movie_name"),
                         rs.getDate("screening_date"),
-                        rs.getTime("screening_time"));
+                        rs.getTime("screening_start_time"));
                 list.add(info);
             }
 
@@ -172,11 +172,11 @@ public class RoomDao {
     // VIEW MOVIE GENRE AND AGE RATING FOR SCREENINGS
     public ArrayList<String> getMovieDetailsForScreenings() {
         ArrayList<String> list = new ArrayList<>();
-        String sql = "SELECT r.room_name, m.title, m.genre, m.age_rating, s.screening_date, s.screening_time " +
+        String sql = "SELECT r.room_name, m.movie_name, m.genre, m.age_rating, s.screening_date, s.screening_start_time " +
                     "FROM Rooms r " +
                     "JOIN Screenings s ON r.room_id = s.room_id " +
                     "JOIN Movies m ON s.movie_id = m.movie_id " +
-                    "ORDER BY s.screening_date, s.screening_time";
+                    "ORDER BY s.screening_date, s.screening_start_time";
 
         try (Connection conn = DBConnection.getConnection();
             Statement st = conn.createStatement();
@@ -185,11 +185,11 @@ public class RoomDao {
             while (rs.next()) {
                 String info = String.format("Room: %s | Movie: %s | Genre: %s | Rating: %s | Date: %s | Time: %s",
                         rs.getString("room_name"),
-                        rs.getString("title"),
+                        rs.getString("movie_name"),
                         rs.getString("genre"),
                         rs.getString("age_rating"),
                         rs.getDate("screening_date"),
-                        rs.getTime("screening_time"));
+                        rs.getTime("screening_start_time"));
                 list.add(info);
             }
 
