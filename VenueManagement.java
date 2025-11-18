@@ -16,10 +16,10 @@ public class VenueManagement{
             System.out.println("1. View venues");
             System.out.println("2. Add a venue");
             System.out.println("3. Edit a venue");
-            System.out.println("4. Delete a venue");
-            System.out.println("5. Search venue");
-            System.out.println("6. View specific venue details");
-             System.out.println("7. Exit");
+            //System.out.println("4. Delete a venue");
+            System.out.println("4. Search venue");
+            System.out.println("5. View specific venue details");
+            System.out.println("6. Exit");
             System.out.print("Choice: ");
             int choice =scanner.nextInt();
             scanner.nextLine();
@@ -33,16 +33,16 @@ public class VenueManagement{
                 case 3:
                     editVenue();
                     break;
-                case 4:
-                    deleteVenue();
-                    break;
-                case 5: 
+                //case 4:
+                   // deleteVenue();
+                    //break;
+                case 4: 
                     searchVenue();
                     break;
-                case 6:
+                case 5:
                     viewVenueDetails();
                     break;
-                case 7:
+                case 6:
                     useVenue=false;
                     break;
                 default:
@@ -106,6 +106,10 @@ public class VenueManagement{
             return venuesDao.getVenueById(venueId);
         }
 
+        public ArrayList<String> getRoomsByVenue(int venueId){
+            return venuesDao.getRoomsByVenue(venueId);
+        }
+
         public void viewVenues(){
             ArrayList<Venues> venues = venuesDao.getAllVenues();
             System.out.println("Displaying all venues:");
@@ -164,6 +168,7 @@ public class VenueManagement{
         public void editVenue(){
 
             viewVenues();
+            boolean stillediting= true;
             System.out.println("Which venue would you like to edit: ");
             int venue_id= scanner.nextInt();
             scanner.nextLine();
@@ -175,12 +180,13 @@ public class VenueManagement{
             else{
                 System.out.println("What information would you like to edit: ");
                 System.out.println("1. Name");
-                System.out.println("2. Address\n");
+                System.out.println("2. Address");
+                System.out.println("3. Cancel\n");
                 System.out.print("Choice: ");
                 int toEdit= scanner.nextInt();
                 scanner.nextLine();
-                
-                switch(toEdit){
+                while(stillediting==true){
+                    switch(toEdit){
                     case 1:
                         System.out.print("Enter new name: ");
                         String new_name = scanner.nextLine();
@@ -204,6 +210,7 @@ public class VenueManagement{
                                     boolean updated = venuesDao.updateVenue(venue);
                                     if(updated==true){
                                         System.out.println("Venue name updated successfully.");
+                                        stillediting=false;
                                     }
                                     else{
                                         System.out.println("Failed to update venue name");
@@ -212,27 +219,36 @@ public class VenueManagement{
 
                             }
                         }
-                    break;
-                    case 2:
-                        System.out.print("Enter new address: ");
-                        String new_address = scanner.nextLine();
-                        if(!new_address.isEmpty()){
-                            if(new_address.equals(venue.getAddress())){
-                                System.out.println("ERROR: The new address cannot be the same as the old address.");
-                            }
-                            else{
-                                venue.setAddress(new_address);
-                                boolean updated = venuesDao.updateVenue(venue);
-                                if (updated){
-                                     System.out.println("Venue address updated successfully.");
+                        break;
+                        case 2:
+                            System.out.print("Enter new address: ");
+                            String new_address = scanner.nextLine();
+                            if(!new_address.isEmpty()){
+                                if(new_address.equals(venue.getAddress())){
+                                    System.out.println("ERROR: The new address cannot be the same as the old address.");
                                 }
                                 else{
-                                    System.out.println("Failed to update venue address");
+                                    venue.setAddress(new_address);
+                                    boolean updated = venuesDao.updateVenue(venue);
+                                    if (updated){
+                                        System.out.println("Venue address updated successfully.");
+                                        stillediting=false;
+                                    }
+                                    else{
+                                        System.out.println("Failed to update venue address");
+                                    }
                                 }
                             }
-                        }
-                    default:
-                        System.out.println("Invalid choice, please try again");
+                            break;
+                        case 3:
+                            System.out.println("Cancelling edit.");
+                            stillediting=false;
+                            break;
+                        default:
+                            System.out.println("Invalid choice, please try again");
+
+                    }
+                
                 }
 
             }
@@ -258,18 +274,16 @@ public class VenueManagement{
         }
 
         public void viewRoomsAtVenue(int venueId) {
-            ArrayList<Room> rooms = venuesDao.getRoomsByVenue(venueId);
-
+            System.out.println("\nRooms in This Venue: ");
+            ArrayList<String> rooms = venuesDao.getRoomsByVenue(venueId);
             if (rooms.isEmpty()) {
                 System.out.println("No rooms found in this venue.");
             } else {
-                System.out.println("\nRooms in this venue:");
-                for (Room r : rooms) {
-                    System.out.printf("[ID %d] %s (%s)%n", r.getRoomId(), r.getRoomName(), r.getRoomType());
+                for (String room : rooms) {
+                    System.out.println("  " + room);
                 }
             }
         }
-
 
         private void viewScreeningSchedule(int venueId) {
             System.out.println("\nScreening Schedule:");
