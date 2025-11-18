@@ -20,6 +20,7 @@ public class Screening {
         this.movieId = movieId;
         this.venueId = venueId;
         this.roomId = roomId;
+        this.price = price;
         this.screeningDate = screeningDate;
         this.screeningStartTime = screeningStartTime;
         this.screeningEndTime = screeningEndTime;

@@ -119,6 +119,39 @@ public class ScreeningDao {
         return false;
     }
 
+    public boolean cancelScreeningAndTickets(int screeningId) {
+        String cancelTicketsSQL = "UPDATE TicketBookings SET ticket_status = 'Cancelled' WHERE screening_id = ? AND ticket_status = 'Booked'";
+        String cancelScreeningSQL = "UPDATE Screenings SET screening_status = 'Cancelled' WHERE screening_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            
+            try {
+                // Cancel all booked tickets
+                try (PreparedStatement pst = conn.prepareStatement(cancelTicketsSQL)) {
+                    pst.setInt(1, screeningId);
+                    pst.executeUpdate();
+                }
+                
+                // Cancel the screening
+                try (PreparedStatement pst = conn.prepareStatement(cancelScreeningSQL)) {
+                    pst.setInt(1, screeningId);
+                    pst.executeUpdate();
+                }
+                
+                conn.commit();
+                return true;
+                
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+            
+        } catch (SQLException e) {
+            System.out.println("Error cancelling screening and tickets: " + e.getMessage());
+            return false;
+        }
+    }
 
     
 

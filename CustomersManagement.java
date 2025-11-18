@@ -159,4 +159,8 @@ public class CustomersManagement {
             System.out.println(customer.formatting());
         }
     }
+
+    public CustomersDao getCustomersDao() {
+        return this.customersDao;
+    }
 }

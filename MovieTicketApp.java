@@ -1,10 +1,15 @@
 import java.util.Scanner;
+import javax.swing.*;
 
 public class MovieTicketApp {
 
     private static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
+
+        SwingUtilities.invokeLater(() -> {
+            new MainGUI().setVisible(true);
+        });
         CustomersDao customersDao = new CustomersDao();
 
         System.out.println("=== Welcome to Movie Ticket Management System ===");

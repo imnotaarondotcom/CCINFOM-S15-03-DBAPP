@@ -89,6 +89,7 @@ public class RoomDao {
                     "FROM Rooms r " +
                     "LEFT JOIN Screenings s ON r.room_id = s.room_id " +
                     "LEFT JOIN TicketBookings tb ON s.screening_id = tb.screening_id " +
+                    "WHERE tb.ticket_status = 'Booked' OR tb.ticket_status IS NULL " +
                     "GROUP BY r.room_id, r.room_name, r.room_type";
 
         try (Connection conn = DBConnection.getConnection();
@@ -199,10 +200,12 @@ public class RoomDao {
         return list;
     }
 
-    // VIEW REVENUE GENERATED FROM TICKET SALES
+    // VIEW REVENUE GENERATED USING SCREENING PRICE
     public ArrayList<String> getRevenueByRoom() {
         ArrayList<String> list = new ArrayList<>();
-        String sql = "SELECT r.room_id, r.room_name, SUM(tb.price) AS total_revenue " +
+        String sql = "SELECT r.room_id, r.room_name, " +
+                    "SUM(s.price) AS total_revenue, " +
+                    "COUNT(tb.ticket_no) AS tickets_sold " +
                     "FROM Rooms r " +
                     "JOIN Screenings s ON r.room_id = s.room_id " +
                     "JOIN TicketBookings tb ON s.screening_id = tb.screening_id " +
@@ -215,8 +218,9 @@ public class RoomDao {
             ResultSet rs = st.executeQuery(sql)) {
 
             while (rs.next()) {
-                String info = String.format("Room: %s | Total Revenue: $%.2f",
+                String info = String.format("Room: %s | Tickets Sold: %d | Total Revenue: PHP %.2f",
                         rs.getString("room_name"),
+                        rs.getInt("tickets_sold"),
                         rs.getDouble("total_revenue"));
                 list.add(info);
             }

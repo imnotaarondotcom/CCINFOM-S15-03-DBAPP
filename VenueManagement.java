@@ -106,10 +106,6 @@ public class VenueManagement{
             return venuesDao.getVenueById(venueId);
         }
 
-        public ArrayList<String> getRoomsByVenue(int venueId){
-            return venuesDao.getRoomsByVenue(venueId);
-        }
-
         public void viewVenues(){
             ArrayList<Venues> venues = venuesDao.getAllVenues();
             System.out.println("Displaying all venues:");
@@ -275,11 +271,11 @@ public class VenueManagement{
 
         public void viewRoomsAtVenue(int venueId) {
             System.out.println("\nRooms in This Venue: ");
-            ArrayList<String> rooms = venuesDao.getRoomsByVenue(venueId);
+            ArrayList<Room> rooms = venuesDao.getRoomsByVenue(venueId);
             if (rooms.isEmpty()) {
                 System.out.println("No rooms found in this venue.");
             } else {
-                for (String room : rooms) {
+                for (Room room : rooms) {
                     System.out.println("  " + room);
                 }
             }

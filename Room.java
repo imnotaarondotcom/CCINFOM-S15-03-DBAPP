@@ -11,6 +11,12 @@ public class Room {
         this.VENUE_ID = venueId;
     }
 
+    @Override
+    public String toString()
+    {
+        return "[ID: " + ROOM_ID + "] " + ROOM_NAME + " | " + ROOM_TYPE + " | Venue ID: " + VENUE_ID;
+    }
+
     public int getRoomId() { return ROOM_ID; }
     public String getRoomName() { return ROOM_NAME; }
     public String getRoomType() { return ROOM_TYPE; }
