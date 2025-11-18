@@ -37,9 +37,9 @@ public class MovieTicketApp {
 
             // Show menu based on account type
             if (loggedInUser.getAccountType().equals("Admin")) {
-                runAdminMenu();
+                runAdminMenu(loggedInUser.getID(), loggedInUser.getAccountType());
             } else {
-                runCustomerMenu();
+                runCustomerMenu(loggedInUser.getID(), loggedInUser.getAccountType());
             }
 
             // After menu ends (user logged out), ask if they want to exit app
@@ -57,13 +57,14 @@ public class MovieTicketApp {
     }
 
 
-    private static void runAdminMenu() {
+    private static void runAdminMenu(int customerId, String accountType) {
         boolean running = true;
         CustomersManagement customerManagement = new CustomersManagement(scanner);
         VenueManagement venueManagement = new VenueManagement(scanner);
         MovieManagement movieManagement = new MovieManagement(new MovieDao(), venueManagement, scanner);
         RoomManagement roomManagement = new RoomManagement();
         SeatManagement seatManagement = new SeatManagement();
+        TicketBookingsManagement ticketBookingsManagement = new TicketBookingsManagement(scanner, customerId, accountType);
 
         while (running) {
             System.out.println("\n=== Admin Menu ===");
@@ -72,7 +73,8 @@ public class MovieTicketApp {
             System.out.println("3. Venue Management");
             System.out.println("4. Rooms Management");
             System.out.println("5. Seat Management");
-            System.out.println("6. Logout");
+            System.out.println("6. Ticket Bookings");
+            System.out.println("7. Logout");
             System.out.print("Choice: ");
 
             int choice = scanner.nextInt();
@@ -84,14 +86,20 @@ public class MovieTicketApp {
                 case 3 -> venueManagement.venueMenu();
                 case 4 -> roomManagement.manageRoom();
                 case 5 -> seatManagement.manageSeat();
-                case 6 -> running = false;
+                case 6 -> ticketBookingsManagement.openMenu();
+                case 7 -> running = false;
                 default -> System.out.println("Invalid input, please try again.");
             }
         }
     }
 
-    private static void runCustomerMenu() {
+    private static void runCustomerMenu(int customerId, String accountType) {
         boolean running = true;
+
+        TicketBookingsManagement ticketBookingsManagement = new TicketBookingsManagement(scanner, customerId, accountType);
+        VenueManagement venueManagement = new VenueManagement(scanner);
+        MovieManagement movieManagement = new MovieManagement(new MovieDao(), venueManagement, scanner);
+        ScreeningDao screeningDao = new ScreeningDao();
 
         while (running) {
             System.out.println("\n=== Customer Menu ===");
@@ -106,13 +114,25 @@ public class MovieTicketApp {
             scanner.nextLine();
 
             switch (choice) {
-                case 1 -> { /* Ticket bookings logic */ }
-                case 2 -> { /* View venues logic */ }
-                case 3 -> { /* View screenings logic */ }
-                case 4 -> { /* View movies logic */ }
+                case 1 -> ticketBookingsManagement.openMenu();
+
+                case 2 -> {
+                    System.out.println("\n=== Venues ===");
+                    venueManagement.viewVenues(); // assuming you have a method to display all venues
+                }
+
+                case 3 -> ticketBookingsManagement.showAllScreenings();
+
+                case 4 -> {
+                    System.out.println("\n=== Movies ===");
+                    movieManagement.viewMovies(); // assuming you have a method to display movies
+                }
+
                 case 5 -> running = false; // logout
+
                 default -> System.out.println("Invalid input, please try again.");
             }
         }
     }
+
 }

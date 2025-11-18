@@ -54,7 +54,7 @@ public class MovieManagement
     }
 
     // VIEW MOVIES
-    private void viewMovies() 
+    public void viewMovies() 
     {
         ArrayList<Movie> movies = movieDao.getAllMovies();
         System.out.println("\n--- MOVIE LIST ---");
@@ -283,9 +283,14 @@ public class MovieManagement
         // Calculate end time based on movie duration
         LocalTime endTime = startTime.plusMinutes(movie.getDuration());
 
+        // Enter price for the screening
+        System.out.print("Enter ticket price for this screening: ");
+        double price = scanner.nextDouble();
+        scanner.nextLine();
+
         // Add screening
         ScreeningDao screeningDao = new ScreeningDao();
-        boolean added = screeningDao.addScreening(movieId, venueId, roomId, date, startTime, endTime);
+        boolean added = screeningDao.addScreening(movieId, venueId, roomId, price, date, startTime, endTime);
 
         if (added)
             System.out.println("Screening added successfully!");
