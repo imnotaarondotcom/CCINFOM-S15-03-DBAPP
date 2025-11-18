@@ -33,7 +33,7 @@ FOREIGN KEY(venue_id) REFERENCES Venues(venue_id)
 
 CREATE TABLE Seats(
 seat_id INT PRIMARY KEY AUTO_INCREMENT,
-seat_no VARCHAR(5),
+seat_no int,
 room_id int,
 FOREIGN KEY(room_id) REFERENCES Rooms(room_id)
 );
@@ -112,3 +112,6 @@ INSERT INTO Rooms (room_name, room_type, venue_id) VALUES
 ('Screen 3', 'Standard', 3),
 ('Dolby Cinema', 'Standard', 3),
 ('Family Room', 'Standard', 3);
+
+select *
+from seats;
