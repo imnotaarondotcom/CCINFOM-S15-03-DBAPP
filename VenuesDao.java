@@ -169,28 +169,32 @@ public class VenuesDao{
     return movies;
 }
 
-public ArrayList<String> getRoomsByVenue(int venueId) {
-    ArrayList<String> rooms = new ArrayList<>();
-    String command = "SELECT room_id, room_name, room_type FROM Rooms WHERE venue_id = ? ORDER BY room_id";
-    
-    try (Connection connection = DBConnection.getConnection();
-         PreparedStatement statement = connection.prepareStatement(command)) {
-        
-        statement.setInt(1, venueId);
-        ResultSet rs = statement.executeQuery();
-        
+public ArrayList<Room> getRoomsByVenue(int venueId) {
+    ArrayList<Room> rooms = new ArrayList<>();
+    String sql = "SELECT room_id, room_name, room_type, venue_id FROM Rooms WHERE venue_id = ?";
+
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement pst = conn.prepareStatement(sql)) {
+
+        pst.setInt(1, venueId);
+        ResultSet rs = pst.executeQuery();
+
         while (rs.next()) {
-            String roomInfo = String.format("Room ID: %d Name: %s Type: %s",
+            rooms.add(new Room(
                 rs.getInt("room_id"),
                 rs.getString("room_name"),
-                rs.getString("room_type"));
-            rooms.add(roomInfo);
+                rs.getString("room_type"),
+                rs.getInt("venue_id")
+            ));
         }
-    } catch (SQLException error) {
-        System.out.println("Error getting rooms for venue: " + error.getMessage());
+
+    } catch (SQLException e) {
+        System.out.println("Error fetching rooms: " + e.getMessage());
     }
+
     return rooms;
 }
+
 
 public ArrayList<String> getScreeningsByVenue(int venueId) {
     ArrayList<String> screenings = new ArrayList<>();

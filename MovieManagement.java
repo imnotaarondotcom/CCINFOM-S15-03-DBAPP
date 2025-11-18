@@ -1,10 +1,5 @@
 import java.util.ArrayList;
 import java.util.Scanner;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.sql.Date;
-import java.sql.Time;
-
 
 public class MovieManagement 
 {
@@ -32,8 +27,7 @@ public class MovieManagement
             System.out.println("3. Edit movie");
             System.out.println("4. Delete movie");
             System.out.println("5. Search movie");
-            System.out.println("6. Assign movie to screening");
-            System.out.println("7. Back");
+            System.out.println("6. Back");
             System.out.print("Enter choice: ");
 
             int choice = scanner.nextInt();
@@ -46,8 +40,7 @@ public class MovieManagement
                 case 3 -> editMovie();
                 case 4 -> deleteMovie();
                 case 5 -> searchMovie();
-                case 6 -> assignMovie();
-                case 7 -> running = false;
+                case 6 -> running = false;
                 default -> System.out.println("Invalid input, try again.");
             }
         }
@@ -211,91 +204,6 @@ public class MovieManagement
 
         if (updated) System.out.println("Movie updated!");
         else System.out.println("Failed to update movie.");
-    }
-
-    // ASSIGN MOVIE TO SCREENING
-    private void assignMovie() 
-    {
-        System.out.println("\n[ASSIGN MOVIE TO SCREENING]");
-        
-        // Select Movie
-        ArrayList<Movie> movies = movieDao.getAllMovies();
-        if (movies.isEmpty()) 
-        {
-            System.out.println("No movies available.");
-            return;
-        }
-
-        viewMovies();
-        System.out.println("Select a movie:");
-        int movieId = scanner.nextInt();
-        scanner.nextLine();
-        Movie movie = movieDao.getMovieById(movieId);
-
-        if (movie == null) 
-        {
-            System.out.println("Invalid movie selection.");
-            return;
-        }
-
-        // Select Venue
-        ArrayList<Venues> venues = venueManagement.getAllVenues();
-        if (venues.isEmpty()) 
-        {
-            System.out.println("No venues available.");
-            return;
-        }
-        venueManagement.viewVenues(); 
-        System.out.println("Select a venue:");
-        int venueId = scanner.nextInt();
-        scanner.nextLine();
-        Venues venue = venueManagement.getVenueById(venueId);
-
-        if (venue == null)
-        {
-            System.out.println("Invalid venue selection.");
-            return;
-        }
-
-        // Select Room
-        ArrayList<String> rooms = venueManagement.getRoomsByVenue(venueId);
-        if (rooms.isEmpty()) 
-        {
-            System.out.println("No rooms available at this venue.");
-            return;
-        }
-        venueManagement.viewRoomsAtVenue(venueId);
-        System.out.println("Select a room:");
-
-        int roomIndex = scanner.nextInt();
-        scanner.nextLine();
-        int roomId = roomIndex;
-
-        // Enter Date & Start Time
-        System.out.print("Enter screening date (YYYY-MM-DD): ");
-        String dateInput = scanner.nextLine();
-        System.out.print("Enter start time (HH:MM 24h): ");
-        String startTimeInput = scanner.nextLine();
-
-        LocalDate date = LocalDate.parse(dateInput);
-        LocalTime startTime = LocalTime.parse(startTimeInput);
-
-        // Calculate end time based on movie duration
-        LocalTime endTime = startTime.plusMinutes(movie.getDuration());
-
-        // Enter price for the screening
-        System.out.print("Enter ticket price for this screening: ");
-        double price = scanner.nextDouble();
-        scanner.nextLine();
-
-        // Add screening
-        ScreeningDao screeningDao = new ScreeningDao();
-        boolean added = screeningDao.addScreening(movieId, venueId, roomId, price, date, startTime, endTime);
-
-        if (added)
-            System.out.println("Screening added successfully!");
-        else
-            System.out.println("Failed to add screening. Time slot may be occupied.");
     }
 
 }

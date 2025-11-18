@@ -5,49 +5,26 @@ import java.util.ArrayList;
 
 public class ScreeningDao {
 
-    // Add screening with price and status
+    // Add a new screening (assumes room availability already checked)
     public boolean addScreening(int movieId, int venueId, int roomId, double price, LocalDate date, LocalTime startTime, LocalTime endTime) {
-        String checkCommand = """
-            SELECT COUNT(*) FROM Screenings 
-            WHERE room_id = ? AND screening_date = ? 
-              AND ((screening_start_time <= ? AND screening_end_time > ?) 
-                   OR (screening_start_time < ? AND screening_end_time >= ?))
-            """;
-
-        String insertCommand = """
+        String insertSQL = """
             INSERT INTO Screenings 
-            (movie_id, venue_id, room_id, price, screening_date, screening_start_time, screening_end_time, screening_status) 
+            (movie_id, venue_id, room_id, price, screening_date, screening_start_time, screening_end_time, screening_status)
             VALUES (?, ?, ?, ?, ?, ?, ?, 'Active')
-            """;
+        """;
 
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement checkStmt = connection.prepareStatement(checkCommand);
-             PreparedStatement insertStmt = connection.prepareStatement(insertCommand)) {
+        try (Connection conn = DBConnection.getConnection();
+            PreparedStatement pst = conn.prepareStatement(insertSQL)) {
 
-            // Check for time conflict
-            checkStmt.setInt(1, roomId);
-            checkStmt.setDate(2, Date.valueOf(date));
-            checkStmt.setTime(3, Time.valueOf(startTime));
-            checkStmt.setTime(4, Time.valueOf(startTime));
-            checkStmt.setTime(5, Time.valueOf(endTime));
-            checkStmt.setTime(6, Time.valueOf(endTime));
+            pst.setInt(1, movieId);
+            pst.setInt(2, venueId);
+            pst.setInt(3, roomId);
+            pst.setDouble(4, price);
+            pst.setDate(5, Date.valueOf(date));
+            pst.setTime(6, Time.valueOf(startTime));
+            pst.setTime(7, Time.valueOf(endTime));
 
-            ResultSet rs = checkStmt.executeQuery();
-            if (rs.next() && rs.getInt(1) > 0) {
-                return false; // Conflict exists
-            }
-
-            // Insert screening
-            insertStmt.setInt(1, movieId);
-            insertStmt.setInt(2, venueId);
-            insertStmt.setInt(3, roomId);
-            insertStmt.setDouble(4, price); // <-- set price
-            insertStmt.setDate(5, Date.valueOf(date));
-            insertStmt.setTime(6, Time.valueOf(startTime));
-            insertStmt.setTime(7, Time.valueOf(endTime));
-
-            int added = insertStmt.executeUpdate();
-            return added > 0;
+            return pst.executeUpdate() > 0;
 
         } catch (SQLException e) {
             System.out.println("Error adding screening: " + e.getMessage());
@@ -103,5 +80,46 @@ public class ScreeningDao {
 
         return null;
     }
+
+    public boolean isRoomAvailable(int roomId, LocalDate date, LocalTime startTime, LocalTime endTime, Integer excludeScreeningId) {
+        String sql = """
+            SELECT COUNT(*) FROM Screenings
+            WHERE room_id = ? AND screening_date = ?
+            AND ((screening_start_time <= ? AND screening_end_time > ?)
+                OR (screening_start_time < ? AND screening_end_time >= ?))
+        """;
+
+        if (excludeScreeningId != null) {
+            sql += " AND screening_id <> ?";
+        }
+
+        try (Connection conn = DBConnection.getConnection();
+            PreparedStatement pst = conn.prepareStatement(sql)) {
+
+            pst.setInt(1, roomId);
+            pst.setDate(2, Date.valueOf(date));
+            pst.setTime(3, Time.valueOf(startTime));
+            pst.setTime(4, Time.valueOf(startTime));
+            pst.setTime(5, Time.valueOf(endTime));
+            pst.setTime(6, Time.valueOf(endTime));
+
+            if (excludeScreeningId != null) {
+                pst.setInt(7, excludeScreeningId);
+            }
+
+            ResultSet rs = pst.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) == 0; // true if no conflict
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error checking room availability: " + e.getMessage());
+        }
+
+        return false;
+    }
+
+
+    
 
 }
