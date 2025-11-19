@@ -1,0 +1,2 @@
+javac -classpath ".;..\lib\mysql-connector-j-9.5.0.jar" *.java
+java -classpath ".;..\lib\mysql-connector-j-9.5.0.jar" MovieTicketApp

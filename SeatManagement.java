@@ -8,7 +8,7 @@ public class SeatManagement {
     public static void manageSeat() {
         while (true) {
             System.out.println("\n===== SEAT MANAGEMENT =====");
-            System.out.println("1. Add Seat");
+            System.out.println("1. Add Seats");
             System.out.println("2. Delete Seat");
             System.out.println("3. View Seats by Room");
             System.out.println("4. Back to Main Menu");
@@ -19,7 +19,7 @@ public class SeatManagement {
 
             switch (choice) {
                 case 1:
-                    addSeat();
+                    addSeats();
                     break;
                 case 2:
                     deleteSeat();
@@ -35,15 +35,24 @@ public class SeatManagement {
         }
     }
 
-    private static void addSeat() {
-        System.out.print("Enter Seat Number: ");
-        String seatNo = scanner.nextLine();
+    private static void addSeats() {
+        System.out.println("\n== ADD SEATS TO ROOM ==");
 
         System.out.print("Enter Room ID: ");
         int roomId = scanner.nextInt();
         scanner.nextLine();
 
-        seatDao.addSeat(seatNo, roomId);
+        System.out.print("How many seats to add: ");
+        int count = scanner.nextInt();
+        scanner.nextLine();
+        
+        boolean success = seatDao.addSeats(roomId, count);
+
+        if (success) {
+            System.out.println(count + " seats added successfully.");
+        } else {
+            System.out.println("Failed to add seats.");
+        }
     }
 
     private static void deleteSeat() {

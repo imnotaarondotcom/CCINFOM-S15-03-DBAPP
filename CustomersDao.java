@@ -15,8 +15,10 @@ public class CustomersDao {
                 int id = rs.getInt("customer_id");
                 String number = rs.getString("phone_number");
                 String username = rs.getString("username");
+                String accountType = rs.getString("account_type");
+                String password = rs.getString("user_password");
 
-                Customers customer = new Customers(id, number, username);
+                Customers customer = new Customers(id, number, username, accountType, password);
                 customers.add(customer);
             }
 
@@ -29,13 +31,15 @@ public class CustomersDao {
 
 
     public boolean addCustomer(Customers customer) {
-        String command = "INSERT INTO Customers (phone_number, username) VALUES (?, ?)";
+        String command = "INSERT INTO Customers (phone_number, username, account_type, user_password) VALUES (?, ?, ?, ?)";
 
         try (Connection connect = DBConnection.getConnection();
-             PreparedStatement statement = connect.prepareStatement(command, Statement.RETURN_GENERATED_KEYS)) {
+            PreparedStatement statement = connect.prepareStatement(command, Statement.RETURN_GENERATED_KEYS)) {
 
             statement.setString(1, customer.getNumber());
             statement.setString(2, customer.getName());
+            statement.setString(3, customer.getAccountType());
+            statement.setString(4, customer.getPassword());
 
             int updated = statement.executeUpdate();
 
@@ -56,14 +60,16 @@ public class CustomersDao {
     }
 
     public boolean updateCustomer(Customers customer) {
-        String command = "UPDATE Customers SET phone_number = ?, username = ? WHERE customer_id = ?";
+        String command = "UPDATE Customers SET phone_number = ?, username = ?, account_type = ?, user_password = ? WHERE customer_id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement statement = conn.prepareStatement(command)) {
 
             statement.setString(1, customer.getNumber());
             statement.setString(2, customer.getName());
-            statement.setInt(3, customer.getID());
+            statement.setString(3, customer.getAccountType());
+            statement.setString(4, customer.getPassword());
+            statement.setInt(5, customer.getID());
 
             int updated = statement.executeUpdate();
             return updated > 0;
@@ -108,7 +114,35 @@ public class CustomersDao {
                 return new Customers(
                         rs.getInt("customer_id"),
                         rs.getString("phone_number"),
-                        rs.getString("username")
+                        rs.getString("username"),
+                        rs.getString("account_type"),
+                        rs.getString("user_password")
+                );
+            }
+
+        } catch (SQLException error) {
+            System.out.println("Error getting customer: " + error.getMessage());
+        }
+
+        return null;
+    }
+
+    public Customers getCustomerByUsername(String username) {
+        String command = "SELECT * FROM Customers WHERE username = ?";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(command)) {
+
+            statement.setString(1, username);
+            ResultSet rs = statement.executeQuery();
+
+            if (rs.next()) {
+                return new Customers(
+                        rs.getInt("customer_id"),
+                        rs.getString("phone_number"),
+                        rs.getString("username"),
+                        rs.getString("account_type"),
+                        rs.getString("user_password")
                 );
             }
 

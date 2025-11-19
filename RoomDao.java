@@ -89,6 +89,7 @@ public class RoomDao {
                     "FROM Rooms r " +
                     "LEFT JOIN Screenings s ON r.room_id = s.room_id " +
                     "LEFT JOIN TicketBookings tb ON s.screening_id = tb.screening_id " +
+                    "WHERE tb.ticket_status = 'Booked' OR tb.ticket_status IS NULL " +
                     "GROUP BY r.room_id, r.room_name, r.room_type";
 
         try (Connection conn = DBConnection.getConnection();
@@ -144,11 +145,11 @@ public class RoomDao {
     // VIEW ROOMS WITH MOVIE SCREENING INFORMATION
     public ArrayList<String> getRoomsWithMovieInfo() {
         ArrayList<String> list = new ArrayList<>();
-        String sql = "SELECT r.room_id, r.room_name, m.title AS movie_title, s.screening_date, s.screening_time " +
+        String sql = "SELECT r.room_id, r.room_name, m.movie_name AS movie_name, s.screening_date, s.screening_start_time " +
                     "FROM Rooms r " +
                     "JOIN Screenings s ON r.room_id = s.room_id " +
                     "JOIN Movies m ON s.movie_id = m.movie_id " +
-                    "ORDER BY s.screening_date, s.screening_time";
+                    "ORDER BY s.screening_date, s.screening_start_time";
 
         try (Connection conn = DBConnection.getConnection();
             Statement st = conn.createStatement();
@@ -157,9 +158,9 @@ public class RoomDao {
             while (rs.next()) {
                 String info = String.format("Room: %s | Movie: %s | Date: %s | Time: %s",
                         rs.getString("room_name"),
-                        rs.getString("movie_title"),
+                        rs.getString("movie_name"),
                         rs.getDate("screening_date"),
-                        rs.getTime("screening_time"));
+                        rs.getTime("screening_start_time"));
                 list.add(info);
             }
 
@@ -172,11 +173,11 @@ public class RoomDao {
     // VIEW MOVIE GENRE AND AGE RATING FOR SCREENINGS
     public ArrayList<String> getMovieDetailsForScreenings() {
         ArrayList<String> list = new ArrayList<>();
-        String sql = "SELECT r.room_name, m.title, m.genre, m.age_rating, s.screening_date, s.screening_time " +
+        String sql = "SELECT r.room_name, m.movie_name, m.genre, m.age_rating, s.screening_date, s.screening_start_time " +
                     "FROM Rooms r " +
                     "JOIN Screenings s ON r.room_id = s.room_id " +
                     "JOIN Movies m ON s.movie_id = m.movie_id " +
-                    "ORDER BY s.screening_date, s.screening_time";
+                    "ORDER BY s.screening_date, s.screening_start_time";
 
         try (Connection conn = DBConnection.getConnection();
             Statement st = conn.createStatement();
@@ -185,11 +186,11 @@ public class RoomDao {
             while (rs.next()) {
                 String info = String.format("Room: %s | Movie: %s | Genre: %s | Rating: %s | Date: %s | Time: %s",
                         rs.getString("room_name"),
-                        rs.getString("title"),
+                        rs.getString("movie_name"),
                         rs.getString("genre"),
                         rs.getString("age_rating"),
                         rs.getDate("screening_date"),
-                        rs.getTime("screening_time"));
+                        rs.getTime("screening_start_time"));
                 list.add(info);
             }
 
@@ -199,10 +200,12 @@ public class RoomDao {
         return list;
     }
 
-    // VIEW REVENUE GENERATED FROM TICKET SALES
+    // VIEW REVENUE GENERATED USING SCREENING PRICE
     public ArrayList<String> getRevenueByRoom() {
         ArrayList<String> list = new ArrayList<>();
-        String sql = "SELECT r.room_id, r.room_name, SUM(tb.price) AS total_revenue " +
+        String sql = "SELECT r.room_id, r.room_name, " +
+                    "SUM(s.price) AS total_revenue, " +
+                    "COUNT(tb.ticket_no) AS tickets_sold " +
                     "FROM Rooms r " +
                     "JOIN Screenings s ON r.room_id = s.room_id " +
                     "JOIN TicketBookings tb ON s.screening_id = tb.screening_id " +
@@ -215,8 +218,9 @@ public class RoomDao {
             ResultSet rs = st.executeQuery(sql)) {
 
             while (rs.next()) {
-                String info = String.format("Room: %s | Total Revenue: $%.2f",
+                String info = String.format("Room: %s | Tickets Sold: %d | Total Revenue: PHP %.2f",
                         rs.getString("room_name"),
+                        rs.getInt("tickets_sold"),
                         rs.getDouble("total_revenue"));
                 list.add(info);
             }

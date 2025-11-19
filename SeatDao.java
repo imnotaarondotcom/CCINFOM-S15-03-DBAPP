@@ -3,21 +3,40 @@ import java.util.ArrayList;
 
 public class SeatDao {
 
-    // ADD SEAT TO A ROOM
-    public void addSeat(String seatNo, int roomId) {
-        String sql = "INSERT INTO Seats(seat_no, room_id) VALUES (?, ?)";
+    // ADD SEATS TO A ROOM
+    public boolean addSeats(int roomId, int count) {
+        String getMaxSeat = "SELECT COALESCE(MAX(seat_no), 0) FROM Seats WHERE room_id = ?";
+        String insertSeat = "INSERT INTO Seats (room_id, seat_no) VALUES (?, ?)";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pst = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection()) {
 
-            pst.setString(1, seatNo);
-            pst.setInt(2, roomId);
-            pst.executeUpdate();
+            // 1. Get starting seat number
+            int startSeat = 0;
+            try (PreparedStatement stmt = conn.prepareStatement(getMaxSeat)) {
+                stmt.setInt(1, roomId);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    startSeat = rs.getInt(1);
+                }
+            }
 
-            System.out.println("Seat added successfully!");
+            // 2. Insert seats
+            try (PreparedStatement stmt = conn.prepareStatement(insertSeat)) {
+
+                for (int i = 1; i <= count; i++) {
+                    stmt.setInt(1, roomId);
+                    stmt.setInt(2, startSeat + i);
+                    stmt.addBatch();
+                }
+
+                stmt.executeBatch();
+            }
+
+            return true;
 
         } catch (SQLException e) {
-            System.err.println("Error adding seat: " + e.getMessage());
+            System.out.println("Error adding seats: " + e.getMessage());
+            return false;
         }
     }
 

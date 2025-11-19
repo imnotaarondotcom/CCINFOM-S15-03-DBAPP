@@ -140,57 +140,58 @@ public class VenuesDao{
     }
 
     public ArrayList<String> getMoviesByVenue(int venueId) {
-    ArrayList<String> movies = new ArrayList<>();
-    String command = """
-        SELECT DISTINCT m.movie_name, s.screening_date, s.screening_start_time 
-        FROM Movies m 
-        JOIN Screenings s ON m.movie_id = s.movie_id 
-        JOIN Rooms r ON s.room_id = r.room_id 
-        WHERE r.venue_id = ? 
-        ORDER BY s.screening_date, s.screening_start_time
-        """;
-    
-     try (Connection connection = DBConnection.getConnection();
-         PreparedStatement statement = connection.prepareStatement(command)) {
+        ArrayList<String> movies = new ArrayList<>();
+        String command = """
+            SELECT DISTINCT m.movie_name
+            FROM Movies m 
+            JOIN Screenings s ON m.movie_id = s.movie_id 
+            JOIN Rooms r ON s.room_id = r.room_id 
+            WHERE r.venue_id = ? 
+            ORDER BY m.movie_name
+            """;
         
-        statement.setInt(1, venueId);
-        ResultSet rs = statement.executeQuery();
-        
-        while (rs.next()) {
-            String movieInfo = String.format("Movie: %s Date: %s Time: %s",
-                rs.getString("movie_name"),
-                rs.getDate("screening_date"),
-                rs.getTime("screening_start_time"));
-            movies.add(movieInfo);
+        try (Connection connection = DBConnection.getConnection();
+            PreparedStatement statement = connection.prepareStatement(command)) {
+            
+            statement.setInt(1, venueId);
+            ResultSet rs = statement.executeQuery();
+            
+            while (rs.next()) {
+                String movieName = rs.getString("movie_name");
+                movies.add(movieName);
+            }
+        } catch (SQLException error) {
+            System.out.println("Error getting movies for venue: " + error.getMessage());
         }
-    } catch (SQLException error) {
-        System.out.println("Error getting movies for venue: " + error.getMessage());
+        return movies;
     }
-    return movies;
-}
-
-public ArrayList<String> getRoomsByVenue(int venueId) {
-    ArrayList<String> rooms = new ArrayList<>();
-    String command = "SELECT room_id, room_name, room_type FROM Rooms WHERE venue_id = ? ORDER BY room_name";
     
-    try (Connection connection = DBConnection.getConnection();
-         PreparedStatement statement = connection.prepareStatement(command)) {
-        
-        statement.setInt(1, venueId);
-        ResultSet rs = statement.executeQuery();
-        
+    public ArrayList<Room> getRoomsByVenue(int venueId) {
+    ArrayList<Room> rooms = new ArrayList<>();
+    String sql = "SELECT room_id, room_name, room_type, venue_id FROM Rooms WHERE venue_id = ?";
+
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement pst = conn.prepareStatement(sql)) {
+
+        pst.setInt(1, venueId);
+        ResultSet rs = pst.executeQuery();
+
         while (rs.next()) {
-            String roomInfo = String.format("Room ID: %d Name: %s Type: %s",
+            rooms.add(new Room(
                 rs.getInt("room_id"),
                 rs.getString("room_name"),
-                rs.getString("room_type"));
-            rooms.add(roomInfo);
+                rs.getString("room_type"),
+                rs.getInt("venue_id")
+            ));
         }
-    } catch (SQLException error) {
-        System.out.println("Error getting rooms for venue: " + error.getMessage());
+
+    } catch (SQLException e) {
+        System.out.println("Error fetching rooms: " + e.getMessage());
     }
+
     return rooms;
 }
+
 
 public ArrayList<String> getScreeningsByVenue(int venueId) {
     ArrayList<String> screenings = new ArrayList<>();
@@ -210,7 +211,7 @@ public ArrayList<String> getScreeningsByVenue(int venueId) {
         ResultSet rs = statement.executeQuery();
         
         while (rs.next()) {
-            String screeningInfo = String.format("Movie: %s Room: %s Date: %s Time: %s - %s",
+            String screeningInfo = String.format("Movie: %s | Room: %s | Date: %s | Time: %s - %s",
                 rs.getString("movie_name"),
                 rs.getString("room_name"),
                 rs.getDate("screening_date"),

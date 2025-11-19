@@ -1,14 +1,16 @@
 import java.util.ArrayList;
 import java.util.Scanner;
 
-public class MovieMenu 
+public class MovieManagement 
 {
     private MovieDao movieDao;
+    private VenueManagement venueManagement;
     private Scanner scanner;
 
-    public MovieMenu(MovieDao movieDao, Scanner scanner) 
+    public MovieManagement(MovieDao movieDao, VenueManagement venueManagement, Scanner scanner) 
     {
         this.movieDao = movieDao;
+        this.venueManagement = venueManagement;
         this.scanner = scanner;
     }
 
@@ -45,7 +47,7 @@ public class MovieMenu
     }
 
     // VIEW MOVIES
-    private void viewMovies() 
+    public void viewMovies() 
     {
         ArrayList<Movie> movies = movieDao.getAllMovies();
         System.out.println("\n--- MOVIE LIST ---");
@@ -102,17 +104,15 @@ public class MovieMenu
             int choice = scanner.nextInt();
             scanner.nextLine();
 
-            return switch (choice) 
+            switch (choice) 
             {
-                case 1 -> "G";
-                case 2 -> "PG";
-                case 3 -> "PG-13";
-                case 4 -> "R";
-                default -> {
+                case 1: return "G";
+                case 2: return "PG";
+                case 3: return "PG-13";
+                case 4: return "R";
+                default:
                     System.out.println("Invalid rating. Try again.");
-                    yield null;
-                }
-            };
+            }
         }
     }
 
@@ -166,6 +166,8 @@ public class MovieMenu
             return;
         }
 
+        System.out.println(movie.toString());
+
         System.out.println("What do you want to edit?");
         System.out.println("1. Name");
         System.out.println("2. Genre");
@@ -203,4 +205,5 @@ public class MovieMenu
         if (updated) System.out.println("Movie updated!");
         else System.out.println("Failed to update movie.");
     }
+
 }

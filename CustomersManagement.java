@@ -43,15 +43,40 @@ public class CustomersManagement {
         String number = scanner.nextLine();
 
         System.out.print("Enter Username: ");
-        String name = scanner.nextLine();
+        String username = scanner.nextLine();
 
-        Customers newCustomer = new Customers(0, number, name);
+        String accountType = getAccountTypeInput();
+
+        System.out.print("Enter Password: ");
+        String password = scanner.nextLine();
+
+        Customers newCustomer = new Customers(0, number, username, accountType, password);
         boolean added = customersDao.addCustomer(newCustomer);
 
         if (added) System.out.println("Customer added.");
         else System.out.println("Error adding customer.");
     }
 
+    public String getAccountTypeInput() {
+        while (true) 
+        {
+            System.out.println("Select account type:");
+            System.out.println("[1] Admin");
+            System.out.println("[2] Customer");
+            System.out.print("Enter: ");
+
+            int choice = scanner.nextInt();
+            scanner.nextLine();
+
+            switch (choice) 
+            {
+                case 1: return "Admin";
+                case 2: return "Customer";
+                default: 
+                    System.out.println("Invalid account type. Try again.");
+            }
+        }
+    }
 
     public void deleteCustomer() {
         viewCustomers();
@@ -72,13 +97,52 @@ public class CustomersManagement {
         int id = scanner.nextInt();
         scanner.nextLine();
 
-        System.out.print("New Phone Number: ");
-        String number = scanner.nextLine();
+        Customers customer = customersDao.getCustomerById(id);
+        if (customer == null)
+        {
+            System.out.println("Customer not found.");
+            return;
+        } 
 
-        System.out.print("New Username: ");
-        String name = scanner.nextLine();
+        System.out.println(customer.formatting());
 
-        Customers customer = new Customers(id, number, name);
+        System.out.println("What do you want to edit?");
+        System.out.println("1. Username");
+        System.out.println("2. Phone number");
+        System.out.println("3. Account type");
+        System.out.println("4. Password");
+        System.out.print("Choice: ");
+
+        int choice = scanner.nextInt();
+        scanner.nextLine();
+
+        switch (choice) 
+        {
+            case 1 -> {
+                System.out.print("New username: ");
+                customer.setName(scanner.nextLine());
+            }
+            case 2 -> {
+                System.out.print("New phone number: ");
+                customer.setNumber(scanner.nextLine());
+            }
+            case 3 -> customer.setAccountType(getAccountTypeInput());
+            case 4 -> {
+                System.out.print("Enter old password: ");
+
+                if (!customer.getPassword().equals(scanner.nextLine())) {
+                    System.out.println("Incorrect password!");
+                    return;
+                } else {
+                    System.out.print("Enter new password: ");
+                    customer.setPassword(scanner.nextLine());
+                }
+            }
+            default -> {
+                System.out.println("Invalid choice.");
+                return;
+            }
+        }
 
         boolean updated = customersDao.updateCustomer(customer);
 
@@ -94,5 +158,9 @@ public class CustomersManagement {
         for (Customers customer : customers) {
             System.out.println(customer.formatting());
         }
+    }
+
+    public CustomersDao getCustomersDao() {
+        return this.customersDao;
     }
 }
