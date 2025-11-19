@@ -34,7 +34,7 @@ public class MovieTicketApp {
                         break;
                     case 4:
                         RoomManagement roomManagement = new RoomManagement();
-                        roomManagement.showMenu();
+                        roomManagement.manageRoom();
                         break;
                     case 5:
                         SeatManagement seatManagement = new SeatManagement();
