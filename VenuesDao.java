@@ -29,8 +29,7 @@ public class VenuesDao{
         }
         return false;
     }
-    
- 
+
     public ArrayList<Venues> getAllVenues() {
         ArrayList<Venues> venues = new ArrayList<>();
         String command = "SELECT * FROM Venues ORDER BY venue_id";
@@ -74,7 +73,7 @@ public class VenuesDao{
         }
         return null;
     }
-    
+
     public boolean updateVenue(Venues venue) {
         String command = "UPDATE Venues SET venue_name = ?, address = ? WHERE venue_id = ?";
         
@@ -93,7 +92,7 @@ public class VenuesDao{
         }
         return false;
     }
-    
+
     public boolean deleteVenue(int venueId) {
         String command = "DELETE FROM Venues WHERE venue_id = ?";
         
@@ -109,7 +108,7 @@ public class VenuesDao{
         }
         return false;
     }
-    
+
     public ArrayList<Venues> searchVenueName(String namePattern) {
         ArrayList<Venues> venues = new ArrayList<>();
         String command = "SELECT * FROM Venues WHERE venue_name LIKE ? ORDER BY venue_name";
@@ -243,170 +242,5 @@ public int getTicketsSoldByVenue(int venueId) {
     }
     return 0;
 }
-
- public double getVenueUtilizationPercentage(int venueId) {
-        String command = """
-            SELECT 
-                COUNT(DISTINCT s.seat_id) as total_seats,
-                COUNT(tb.ticket_no) as tickets_sold
-            FROM Seats s
-            JOIN Rooms r ON s.room_id = r.room_id
-            LEFT JOIN Screenings scr ON r.room_id = scr.room_id
-            LEFT JOIN TicketBookings tb ON scr.screening_id = tb.screening_id 
-                AND tb.ticket_status = 'Booked'
-            WHERE r.venue_id = ?
-            GROUP BY r.venue_id
-            """;
-        
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(command)) {
-            
-            statement.setInt(1, venueId);
-            ResultSet rs = statement.executeQuery();
-            
-            if (rs.next()) {
-                int totalSeats = rs.getInt("total_seats");
-                int ticketsSold = rs.getInt("tickets_sold");
-                
-                if (totalSeats > 0) {
-                    return (ticketsSold * 100.0) / totalSeats;
-                }
-            }
-        } catch (SQLException error) {
-            System.out.println("Error calculating utilization: " + error.getMessage());
-        }
-        return 0.0;
-    }
-
-    public double getActiveVenueUtilization(int venueId) {
-        String command = """
-            SELECT 
-                COUNT(DISTINCT s.seat_id) as total_seats,
-                COUNT(tb.ticket_no) as tickets_sold
-            FROM Seats s
-            JOIN Rooms r ON s.room_id = r.room_id
-            JOIN Screenings scr ON r.room_id = scr.room_id AND scr.screening_status = 'Active'
-            LEFT JOIN TicketBookings tb ON scr.screening_id = tb.screening_id 
-                AND tb.ticket_status = 'Booked'
-            WHERE r.venue_id = ?
-            GROUP BY r.venue_id
-            """;
-        
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(command)) {
-            
-            statement.setInt(1, venueId);
-            ResultSet rs = statement.executeQuery();
-            
-            if (rs.next()) {
-                int totalSeats = rs.getInt("total_seats");
-                int ticketsSold = rs.getInt("tickets_sold");
-                
-                if (totalSeats > 0) {
-                    return (ticketsSold * 100.0) / totalSeats;
-                }
-            }
-        } catch (SQLException error) {
-            System.out.println("Error calculating active utilization: " + error.getMessage());
-        }
-        return 0.0;
-    }
-    
-    public ArrayList<String> getUtilizationByRoomType(int venueId) {
-        ArrayList<String> utilizationList = new ArrayList<>();
-        String command = """
-            SELECT 
-                r.room_type,
-                COUNT(DISTINCT s.seat_id) as total_seats,
-                COUNT(tb.ticket_no) as tickets_sold
-            FROM Rooms r
-            JOIN Seats s ON r.room_id = s.room_id
-            LEFT JOIN Screenings scr ON r.room_id = scr.room_id
-            LEFT JOIN TicketBookings tb ON scr.screening_id = tb.screening_id 
-                AND tb.ticket_status = 'Booked'
-            WHERE r.venue_id = ?
-            GROUP BY r.room_type
-            """;
-        
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(command)) {
-            
-            statement.setInt(1, venueId);
-            ResultSet rs = statement.executeQuery();
-            
-            while (rs.next()) {
-                String roomType = rs.getString("room_type");
-                int totalSeats = rs.getInt("total_seats");
-                int ticketsSold = rs.getInt("tickets_sold");
-                
-                double utilization = (totalSeats > 0) ? (ticketsSold * 100.0) / totalSeats : 0.0;
-                String roomUtilization = String.format("%s: %.1f%%", roomType, utilization);
-                utilizationList.add(roomUtilization);
-            }
-        } catch (SQLException error) {
-            System.out.println("Error calculating room type utilization: " + error.getMessage());
-        }
-        return utilizationList;
-    }
-    
-    public double getVenueUtilizationByDateRange(int venueId, Date startDate, Date endDate) {
-        String command = """
-            SELECT 
-                COUNT(DISTINCT s.seat_id) as total_seats,
-                COUNT(tb.ticket_no) as tickets_sold
-            FROM Seats s
-            JOIN Rooms r ON s.room_id = r.room_id
-            JOIN Screenings scr ON r.room_id = scr.room_id 
-                AND scr.screening_date BETWEEN ? AND ?
-            LEFT JOIN TicketBookings tb ON scr.screening_id = tb.screening_id 
-                AND tb.ticket_status = 'Booked'
-            WHERE r.venue_id = ?
-            GROUP BY r.venue_id
-            """;
-        
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(command)) {
-            
-            statement.setDate(1, startDate);
-            statement.setDate(2, endDate);
-            statement.setInt(3, venueId);
-            ResultSet rs = statement.executeQuery();
-            
-            if (rs.next()) {
-                int totalSeats = rs.getInt("total_seats");
-                int ticketsSold = rs.getInt("tickets_sold");
-                
-                if (totalSeats > 0) {
-                    return (ticketsSold * 100.0) / totalSeats;
-                }
-            }
-        } catch (SQLException error) {
-            System.out.println("Error calculating date range utilization: " + error.getMessage());
-        }
-        return 0.0;
-    }
-    
-    public ArrayList<String> getDetailedUtilizationReport(int venueId) {
-        ArrayList<String> report = new ArrayList<>();
-        
-        double overallUtilization = getVenueUtilizationPercentage(venueId);
-        double activeUtilization = getActiveVenueUtilization(venueId);
-        ArrayList<String> roomTypeUtilization = getUtilizationByRoomType(venueId);
-        
-        report.add(String.format("Overall Venue Utilization: %.1f%%", overallUtilization));
-        report.add(String.format("Active Screenings Utilization: %.1f%%", activeUtilization));
-        report.add("");
-        report.add("Utilization by Room Type:");
-        
-        if (roomTypeUtilization.isEmpty()) {
-            report.add("  No room type data available");
-        } else {
-            for (String roomUtil : roomTypeUtilization) {
-                report.add("  " + roomUtil);
-            }
-        }
-        
-        return report;
-    }
 
 }
