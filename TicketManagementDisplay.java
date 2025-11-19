@@ -96,7 +96,6 @@ public class TicketManagementDisplay extends JPanel {
             }
         });
         
-        // Show/hide buttons based on account type
         if (!"Admin".equals(accountType)) {
             blockButton.setVisible(false);
         }
@@ -118,26 +117,37 @@ public class TicketManagementDisplay extends JPanel {
         
         String sql = """
             SELECT t.ticket_no, m.movie_name, v.venue_name, r.room_name, 
-                   s.seat_no, sc.screening_date, sc.screening_start_time, 
-                   sc.price, t.ticket_status
+                s.seat_no, sc.screening_date, sc.screening_start_time, 
+                sc.price, t.ticket_status, t.customer_id
             FROM TicketBookings t
             JOIN Screenings sc ON t.screening_id = sc.screening_id
             JOIN Movies m ON sc.movie_id = m.movie_id
             JOIN Venues v ON sc.venue_id = v.venue_id
             JOIN Rooms r ON sc.room_id = r.room_id
             JOIN Seats s ON t.seat_id = s.seat_id
-            WHERE t.customer_id = ? OR ? = 'Admin'
+            WHERE (t.customer_id = ? OR ? = 'Admin')
+            AND (t.ticket_status != 'Blocked' OR ? = 'Admin')
             ORDER BY sc.screening_date DESC, sc.screening_start_time DESC
         """;
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pst = conn.prepareStatement(sql)) {
+            PreparedStatement pst = conn.prepareStatement(sql)) {
 
             pst.setInt(1, loggedCustomerId);
             pst.setString(2, accountType);
+            pst.setString(3, accountType); // For the blocked tickets condition
             
             try (ResultSet rs = pst.executeQuery()) {
                 while (rs.next()) {
+                    String status = rs.getString("ticket_status");
+                    int customerId = rs.getInt("customer_id");
+                    
+                    // For blocked tickets, show special message
+                    String displayStatus = status;
+                    if ("Blocked".equals(status) && customerId == -1) {
+                        displayStatus = "Blocked (Admin)";
+                    }
+                    
                     tableModel.addRow(new Object[]{
                         rs.getInt("ticket_no"),
                         rs.getString("movie_name"),
@@ -146,8 +156,8 @@ public class TicketManagementDisplay extends JPanel {
                         rs.getInt("seat_no"),
                         rs.getDate("screening_date"),
                         rs.getTime("screening_start_time"),
-                        String.format("$%.2f", rs.getDouble("price")),
-                        rs.getString("ticket_status")
+                        String.format("PHP %.2f", rs.getDouble("price")),
+                        displayStatus
                     });
                 }
             }
@@ -344,86 +354,210 @@ public class TicketManagementDisplay extends JPanel {
     }
     
     private void blockScreening() {
-        if (!"Admin".equals(accountType)) {
-            JOptionPane.showMessageDialog(this, "Admin access required!");
+    if (!"Admin".equals(accountType)) {
+        JOptionPane.showMessageDialog(this, "Admin access required!");
+        return;
+    }
+    
+    JDialog blockDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), 
+        "Block Screening", true);
+    blockDialog.setLayout(new BorderLayout());
+    blockDialog.setSize(600, 400);
+    blockDialog.setLocationRelativeTo(this);
+    
+    String[] screeningColumns = {"Screening ID", "Movie", "Venue", "Date", "Time", "Status", "Available Seats"};
+    DefaultTableModel screeningsModel = new DefaultTableModel(screeningColumns, 0);
+    JTable screeningsTable = new JTable(screeningsModel);
+    
+    // Load all screenings with available seat count
+    String sql = """
+        SELECT 
+            s.screening_id, 
+            m.movie_name, 
+            v.venue_name, 
+            s.screening_date, 
+            s.screening_start_time, 
+            s.screening_status,
+            (SELECT COUNT(*) FROM Seats se 
+             WHERE se.room_id = s.room_id 
+             AND se.seat_id NOT IN (
+                 SELECT seat_id FROM TicketBookings 
+                 WHERE screening_id = s.screening_id AND ticket_status = 'Booked'
+             )) AS available_seats
+        FROM Screenings s
+        JOIN Movies m ON s.movie_id = m.movie_id
+        JOIN Venues v ON s.venue_id = v.venue_id
+        WHERE s.screening_status = 'Active'
+        ORDER BY s.screening_date, s.screening_start_time
+    """;
+    
+    try (Connection conn = DBConnection.getConnection();
+         Statement stmt = conn.createStatement();
+         ResultSet rs = stmt.executeQuery(sql)) {
+        
+        while (rs.next()) {
+            screeningsModel.addRow(new Object[]{
+                rs.getInt("screening_id"),
+                rs.getString("movie_name"),
+                rs.getString("venue_name"),
+                rs.getDate("screening_date"),
+                rs.getTime("screening_start_time"),
+                rs.getString("screening_status"),
+                rs.getInt("available_seats")
+            });
+        }
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Error loading screenings: " + e.getMessage());
+        return;
+    }
+    
+    JButton blockButton = new JButton("Block Screening (Make All Seats Unavailable)");
+    blockButton.addActionListener(e -> {
+        int selectedRow = screeningsTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(blockDialog, "Please select a screening!");
             return;
         }
         
-        JDialog blockDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), 
-            "Block Screening", true);
-        blockDialog.setLayout(new BorderLayout());
-        blockDialog.setSize(600, 400);
-        blockDialog.setLocationRelativeTo(this);
+        int screeningId = (int) screeningsModel.getValueAt(selectedRow, 0);
+        String movie = (String) screeningsModel.getValueAt(selectedRow, 1);
+        int availableSeats = (int) screeningsModel.getValueAt(selectedRow, 6);
         
-        String[] screeningColumns = {"Screening ID", "Movie", "Venue", "Date", "Time", "Status"};
-        DefaultTableModel screeningsModel = new DefaultTableModel(screeningColumns, 0);
-        JTable screeningsTable = new JTable(screeningsModel);
-        
-        // Load all screenings
-        String sql = """
-            SELECT s.screening_id, m.movie_name, v.venue_name, 
-                   s.screening_date, s.screening_start_time, s.screening_status
-            FROM Screenings s
-            JOIN Movies m ON s.movie_id = m.movie_id
-            JOIN Venues v ON s.venue_id = v.venue_id
-            ORDER BY s.screening_date, s.screening_start_time
-        """;
-        
-        try (Connection conn = DBConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            
-            while (rs.next()) {
-                screeningsModel.addRow(new Object[]{
-                    rs.getInt("screening_id"),
-                    rs.getString("movie_name"),
-                    rs.getString("venue_name"),
-                    rs.getDate("screening_date"),
-                    rs.getTime("screening_start_time"),
-                    rs.getString("screening_status")
-                });
-            }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error loading screenings: " + e.getMessage());
+        if (availableSeats == 0) {
+            JOptionPane.showMessageDialog(blockDialog, 
+                "This screening already has no available seats!");
             return;
         }
         
-        JButton blockButton = new JButton("Cancel Screening");
-        blockButton.addActionListener(e -> {
-            int selectedRow = screeningsTable.getSelectedRow();
-            if (selectedRow == -1) {
-                JOptionPane.showMessageDialog(blockDialog, "Please select a screening!");
-                return;
-            }
-            
-            int screeningId = (int) screeningsModel.getValueAt(selectedRow, 0);
-            String status = (String) screeningsModel.getValueAt(selectedRow, 5);
-            String movie = (String) screeningsModel.getValueAt(selectedRow, 1);
-            
-            if ("Cancelled".equals(status)) {
-                JOptionPane.showMessageDialog(blockDialog, "This screening is already cancelled!");
-                return;
-            }
-            
-            int confirm = JOptionPane.showConfirmDialog(
-                blockDialog,
-                "Cancel screening for: " + movie + "?\nThis will also cancel all associated tickets!",
-                "Confirm Cancellation",
-                JOptionPane.YES_NO_OPTION
-            );
-            
-            if (confirm == JOptionPane.YES_OPTION) {
-                // Cancel screening and associated tickets
-                cancelScreeningAndTickets(screeningId);
-                JOptionPane.showMessageDialog(blockDialog, "Screening and associated tickets cancelled!");
+        int confirm = JOptionPane.showConfirmDialog(
+            blockDialog,
+            "BLOCK screening for: " + movie + "?\n\n" +
+            "This will make ALL " + availableSeats + " available seats unavailable for booking.\n" +
+            "Existing booked tickets will NOT be affected.\n\n" +
+            "This action cannot be undone!",
+            "Confirm Block Screening",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
+        );
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            // Block the screening by creating dummy bookings for all available seats
+            boolean success = blockAllAvailableSeats(screeningId);
+            if (success) {
+                JOptionPane.showMessageDialog(blockDialog, 
+                    "Screening blocked successfully!\n" +
+                    "All " + availableSeats + " seats are now unavailable for booking.");
                 blockDialog.dispose();
                 loadTicketData();
+            } else {
+                JOptionPane.showMessageDialog(blockDialog, 
+                    "Failed to block screening!", "Error", JOptionPane.ERROR_MESSAGE);
             }
-        });
+        }
+    });
+    
+    // Add a cancel screening button as well for clarity
+    JButton cancelButton = new JButton("Cancel Screening");
+    cancelButton.addActionListener(e -> {
+        int selectedRow = screeningsTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(blockDialog, "Please select a screening!");
+            return;
+        }
         
-        blockDialog.add(new JScrollPane(screeningsTable), BorderLayout.CENTER);
-        blockDialog.add(blockButton, BorderLayout.SOUTH);
-        blockDialog.setVisible(true);
+        int screeningId = (int) screeningsModel.getValueAt(selectedRow, 0);
+        String status = (String) screeningsModel.getValueAt(selectedRow, 5);
+        String movie = (String) screeningsModel.getValueAt(selectedRow, 1);
+        
+        if ("Cancelled".equals(status)) {
+            JOptionPane.showMessageDialog(blockDialog, "This screening is already cancelled!");
+            return;
+        }
+        
+        int confirm = JOptionPane.showConfirmDialog(
+            blockDialog,
+            "CANCEL screening for: " + movie + "?\n\n" +
+            "This will cancel the screening AND refund/cancel all associated tickets!",
+            "Confirm Cancel Screening",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
+        );
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            cancelScreeningAndTickets(screeningId);
+            JOptionPane.showMessageDialog(blockDialog, "Screening and associated tickets cancelled!");
+            blockDialog.dispose();
+            loadTicketData();
+        }
+    });
+    
+    JPanel buttonPanel = new JPanel(new FlowLayout());
+    buttonPanel.add(blockButton);
+    buttonPanel.add(cancelButton);
+    
+    blockDialog.add(new JScrollPane(screeningsTable), BorderLayout.CENTER);
+    blockDialog.add(buttonPanel, BorderLayout.SOUTH);
+    blockDialog.setVisible(true);
+}
+
+    private boolean blockAllAvailableSeats(int screeningId) {
+        String getAvailableSeatsSQL = """
+            SELECT s.seat_id 
+            FROM Seats s
+            WHERE s.room_id = (SELECT room_id FROM Screenings WHERE screening_id = ?)
+            AND s.seat_id NOT IN (
+                SELECT seat_id FROM TicketBookings 
+                WHERE screening_id = ? AND ticket_status = 'Booked'
+            )
+        """;
+        
+        String insertBlockedSeatSQL = """
+            INSERT INTO TicketBookings (ticket_status, seat_id, date_booked, customer_id, screening_id)
+            VALUES ('Blocked', ?, NOW(), -1, ?)
+        """;
+        
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            
+            try {
+                // Get all available seats
+                ArrayList<Integer> availableSeatIds = new ArrayList<>();
+                try (PreparedStatement pst = conn.prepareStatement(getAvailableSeatsSQL)) {
+                    pst.setInt(1, screeningId);
+                    pst.setInt(2, screeningId);
+                    ResultSet rs = pst.executeQuery();
+                    
+                    while (rs.next()) {
+                        availableSeatIds.add(rs.getInt("seat_id"));
+                    }
+                }
+                
+                if (availableSeatIds.isEmpty()) {
+                    return true; // No seats to block
+                }
+                
+                // Create blocked bookings for all available seats
+                try (PreparedStatement pst = conn.prepareStatement(insertBlockedSeatSQL)) {
+                    for (int seatId : availableSeatIds) {
+                        pst.setInt(1, seatId);
+                        pst.setInt(2, screeningId);
+                        pst.addBatch();
+                    }
+                    pst.executeBatch();
+                }
+                
+                conn.commit();
+                return true;
+                
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+            
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error blocking seats: " + e.getMessage());
+            return false;
+        }
     }
     
     private void cancelScreeningAndTickets(int screeningId) {

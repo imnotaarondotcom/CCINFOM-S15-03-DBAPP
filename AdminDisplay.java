@@ -92,7 +92,7 @@ class AdminDisplay extends JPanel {
                     break;
                 case "Reports":
                     mainGUI.showScreen("REPORTS");
-                break;
+                    break;
                 case "Logout":
                     mainGUI.logout();
                     break;

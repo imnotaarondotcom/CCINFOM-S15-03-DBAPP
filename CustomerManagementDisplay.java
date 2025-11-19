@@ -6,14 +6,12 @@ import javax.swing.table.DefaultTableModel;
 
 public class CustomerManagementDisplay extends JPanel {
     private MainGUI mainGUI;
-    private CustomersManagement customersManagement;
     private CustomersDao customersDao;
     private JTable customerTable;
     private DefaultTableModel tableModel;
     
     public CustomerManagementDisplay(MainGUI mainGUI) {
         this.mainGUI = mainGUI;
-        this.customersManagement = new CustomersManagement(new Scanner(System.in));
         this.customersDao = new CustomersDao();
         setLayout(new BorderLayout());
         initializeComponents();

@@ -73,7 +73,7 @@ public class MainGUI extends JFrame {
             if (name != null && (name.equals("CUSTOMER_MANAGEMENT") || name.equals("MOVIE_MANAGEMENT") || 
                 name.equals("VENUE_MANAGEMENT") || name.equals("ROOM_MANAGEMENT") || 
                 name.equals("SEAT_MANAGEMENT") || name.equals("SCREENING_MANAGEMENT") || 
-                name.equals("TICKET_MANAGEMENT"))) {
+                name.equals("TICKET_MANAGEMENT") || name.equals("REPORTS"))) {
                 mainPanel.remove(comp);
             }
         }
@@ -87,6 +87,7 @@ public class MainGUI extends JFrame {
             mainPanel.add(new SeatManagementDisplay(this), "SEAT_MANAGEMENT");
             mainPanel.add(new ScreeningManagementDisplay(this, currentUserType), "SCREENING_MANAGEMENT");
             mainPanel.add(new TicketManagementDisplay(this, currentUserId, currentUserType), "TICKET_MANAGEMENT");
+            mainPanel.add(new ReportsDisplay(this), "REPORTS");
         } else {
             // Customer only needs ticket management and screening view
             mainPanel.add(new TicketManagementDisplay(this, currentUserId, currentUserType), "TICKET_MANAGEMENT");

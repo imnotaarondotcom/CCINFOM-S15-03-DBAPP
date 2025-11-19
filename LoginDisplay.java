@@ -10,12 +10,10 @@ class LoginDisplay extends JPanel {
         this.customersDao = new CustomersDao();
         setLayout(new BorderLayout());
         
-        // Header
         JLabel header = new JLabel("Movie Ticket Management System", JLabel.CENTER);
         header.setFont(new Font("Arial", Font.BOLD, 24));
         header.setBorder(BorderFactory.createEmptyBorder(30, 0, 30, 0));
         
-        // Form panel
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBorder(BorderFactory.createEmptyBorder(50, 100, 50, 100));
         
@@ -29,13 +27,12 @@ class LoginDisplay extends JPanel {
         
         JLabel passwordLabel = new JLabel("Password:");
         passwordLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        JPasswordField passwordField = new JPasswordField(20);
+        JTextField passwordField = new JTextField(20);
         
         JButton loginButton = new JButton("Login");
         loginButton.setFont(new Font("Arial", Font.BOLD, 14));
         loginButton.setPreferredSize(new Dimension(100, 35));
         
-        // Layout components
         gbc.gridx = 0;
         gbc.gridy = 0;
         formPanel.add(usernameLabel, gbc);
@@ -58,7 +55,7 @@ class LoginDisplay extends JPanel {
         
         loginButton.addActionListener(e -> {
             String username = usernameField.getText().trim();
-            String password = new String(passwordField.getPassword()).trim();
+            String password = passwordField.getText().trim();
             
             if (username.isEmpty() || password.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Please enter both username and password!", 
@@ -74,13 +71,11 @@ class LoginDisplay extends JPanel {
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid username or password!", 
                     "Login Failed", JOptionPane.ERROR_MESSAGE);
-                // Clear fields
                 passwordField.setText("");
                 usernameField.requestFocus();
             }
         });
         
-        // Add enter key listener for convenience
         passwordField.addActionListener(e -> loginButton.doClick());
         
         add(header, BorderLayout.NORTH);

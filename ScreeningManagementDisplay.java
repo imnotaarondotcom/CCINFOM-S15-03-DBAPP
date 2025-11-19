@@ -69,35 +69,36 @@ public class ScreeningManagementDisplay extends JPanel {
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         
         JButton addButton = new JButton("Add Screening");
-        JButton editButton = new JButton("Edit Screening");
         JButton cancelButton = new JButton("Cancel Screening");
         JButton refreshButton = new JButton("Refresh");
-        JButton backButton = new JButton("Back to Admin Panel");
+        JButton backButton = new JButton("Back");
         
         // Style buttons
         Font buttonFont = new Font("Arial", Font.PLAIN, 14);
         addButton.setFont(buttonFont);
-        editButton.setFont(buttonFont);
         cancelButton.setFont(buttonFont);
         refreshButton.setFont(buttonFont);
         backButton.setFont(buttonFont);
         
         // Add action listeners
         addButton.addActionListener(e -> addScreening());
-        editButton.addActionListener(e -> editScreening());
         cancelButton.addActionListener(e -> cancelScreening());
         refreshButton.addActionListener(e -> loadScreeningData());
-        backButton.addActionListener(e -> mainGUI.showScreen("ADMIN PANEL"));
+        backButton.addActionListener(e -> {
+            if ("Admin".equals(accountType)) {
+                mainGUI.showScreen("ADMIN PANEL");
+            } else {
+                mainGUI.showScreen("CUSTOMER PANEL");
+            }
+        });
         
         // Show/hide buttons based on account type
         if (!"Admin".equals(accountType)) {
             addButton.setVisible(false);
-            editButton.setVisible(false);
             cancelButton.setVisible(false);
         }
         
         buttonPanel.add(addButton);
-        buttonPanel.add(editButton);
         buttonPanel.add(cancelButton);
         buttonPanel.add(refreshButton);
         buttonPanel.add(backButton);
@@ -209,8 +210,80 @@ public class ScreeningManagementDisplay extends JPanel {
         buttonPanel.add(cancelButton);
         
         saveButton.addActionListener(e -> {
-            // Validation and saving logic would go here
-            JOptionPane.showMessageDialog(addDialog, "Add screening functionality to be implemented");
+            // Validation
+            if (movieCombo.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(addDialog, "Please select a movie!", "Validation Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (venueCombo.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(addDialog, "Please select a venue!", "Validation Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (roomCombo.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(addDialog, "Please select a room!", "Validation Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (dateField.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(addDialog, "Please enter a date!", "Validation Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (startTimeField.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(addDialog, "Please enter a start time!", "Validation Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (priceField.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(addDialog, "Please enter a price!", "Validation Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            try {
+                // Extract IDs from comboboxes
+                int movieId = extractIdFromCombo((String) movieCombo.getSelectedItem());
+                int venueId = extractIdFromCombo((String) venueCombo.getSelectedItem());
+                int roomId = extractIdFromCombo((String) roomCombo.getSelectedItem());
+                double price = Double.parseDouble(priceField.getText().trim());
+                
+                // Parse date and time
+                java.time.LocalDate screeningDate = java.time.LocalDate.parse(dateField.getText().trim());
+                java.time.LocalTime startTime = java.time.LocalTime.parse(startTimeField.getText().trim());
+                
+                // Get movie duration to calculate end time
+                Movie movie = movieDao.getMovieById(movieId);
+                if (movie == null) {
+                    JOptionPane.showMessageDialog(addDialog, "Movie not found!", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                java.time.LocalTime endTime = startTime.plusMinutes(movie.getDuration());
+                
+                // Check if room is available
+                if (!screeningDao.isRoomAvailable(roomId, screeningDate, startTime, endTime, null)) {
+                    JOptionPane.showMessageDialog(addDialog, 
+                        "Room is not available at this time!\nPlease choose a different time or room.", 
+                        "Room Conflict", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                // Add the screening
+                boolean success = screeningDao.addScreening(movieId, venueId, roomId, price, screeningDate, startTime, endTime);
+                
+                if (success) {
+                    JOptionPane.showMessageDialog(addDialog, "Screening added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    addDialog.dispose();
+                    loadScreeningData(); // Refresh the table
+                } else {
+                    JOptionPane.showMessageDialog(addDialog, "Failed to add screening!", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+                
+            } catch (java.time.format.DateTimeParseException ex) {
+                JOptionPane.showMessageDialog(addDialog, 
+                    "Invalid date or time format!\nDate: YYYY-MM-DD (e.g., 2024-01-15)\nTime: HH:MM (e.g., 14:30)", 
+                    "Format Error", JOptionPane.ERROR_MESSAGE);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(addDialog, "Price must be a valid number!", "Format Error", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(addDialog, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         });
         
         cancelButton.addActionListener(e -> addDialog.dispose());
@@ -219,26 +292,6 @@ public class ScreeningManagementDisplay extends JPanel {
         addDialog.add(buttonPanel, BorderLayout.SOUTH);
         
         addDialog.setVisible(true);
-    }
-    
-    private void editScreening() {
-        int selectedRow = screeningTable.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Please select a screening to edit!", 
-                "No Selection", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        int screeningId = (int) tableModel.getValueAt(selectedRow, 0);
-        Screening screening = screeningDao.getScreeningById(screeningId);
-        
-        if (screening == null) {
-            JOptionPane.showMessageDialog(this, "Screening not found!", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        // Similar to addScreening but with pre-filled values
-        JOptionPane.showMessageDialog(this, "Edit screening functionality to be implemented");
     }
     
     private void cancelScreening() {
