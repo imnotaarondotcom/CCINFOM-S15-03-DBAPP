@@ -1,10 +1,8 @@
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Scanner;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 
 public class CustomerManagementDisplay extends JPanel {
     private MainGUI mainGUI;
@@ -23,7 +21,7 @@ public class CustomerManagementDisplay extends JPanel {
     }
     
     private void initializeComponents() {
-        // Header
+        
         JLabel header = new JLabel("Customer Management", JLabel.CENTER);
         header.setFont(new Font("Arial", Font.BOLD, 24));
         header.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
@@ -33,7 +31,7 @@ public class CustomerManagementDisplay extends JPanel {
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Make table non-editable
+                return false;
             }
         };
         
@@ -64,7 +62,6 @@ public class CustomerManagementDisplay extends JPanel {
         refreshButton.setFont(buttonFont);
         backButton.setFont(buttonFont);
         
-        // Add action listeners
         addButton.addActionListener(e -> addCustomer());
         editButton.addActionListener(e -> editCustomer());
         deleteButton.addActionListener(e -> deleteCustomer());
@@ -77,14 +74,13 @@ public class CustomerManagementDisplay extends JPanel {
         buttonPanel.add(refreshButton);
         buttonPanel.add(backButton);
         
-        // Add components to panel
         add(header, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
     }
     
     private void loadCustomerData() {
-        tableModel.setRowCount(0); // Clear existing data
+        tableModel.setRowCount(0); 
         
         ArrayList<Customers> customers = customersDao.getAllCustomers();
         for (Customers customer : customers) {
@@ -93,7 +89,7 @@ public class CustomerManagementDisplay extends JPanel {
                 customer.getNumber(),
                 customer.getName(),
                 customer.getAccountType(),
-                "••••••••" // Hide actual password
+                customer.getPassword() 
             });
         }
     }
@@ -124,7 +120,7 @@ public class CustomerManagementDisplay extends JPanel {
         saveButton.addActionListener(e -> {
             if (validateInput(phoneField.getText(), usernameField.getText(), new String(passwordField.getPassword()))) {
                 Customers newCustomer = new Customers(
-                    0, // ID will be auto-generated
+                    0,
                     phoneField.getText(),
                     usernameField.getText(),
                     (String) accountTypeCombo.getSelectedItem(),
@@ -184,14 +180,13 @@ public class CustomerManagementDisplay extends JPanel {
         editDialog.add(accountTypeCombo);
         editDialog.add(new JLabel("New Password (optional):"));
         editDialog.add(passwordField);
-        editDialog.add(new JLabel("")); // empty cell for layout
+        editDialog.add(new JLabel("")); 
         editDialog.add(new JLabel("Leave blank to keep current password"));
         
         JButton saveButton = new JButton("Save");
         JButton cancelButton = new JButton("Cancel");
         
         saveButton.addActionListener(e -> {
-            // Use a different validation method for editing that doesn't require password
             if (validateEditInput(phoneField.getText(), usernameField.getText())) {
                 customer.setNumber(phoneField.getText());
                 customer.setName(usernameField.getText());
@@ -221,7 +216,6 @@ public class CustomerManagementDisplay extends JPanel {
         editDialog.setVisible(true);
     }
 
-    // Separate validation method for editing that doesn't require password
     private boolean validateEditInput(String phone, String username) {
         if (phone.trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Phone number cannot be empty!", "Validation Error", JOptionPane.ERROR_MESSAGE);
