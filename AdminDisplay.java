@@ -90,6 +90,9 @@ class AdminDisplay extends JPanel {
                 case "Tickets":
                     mainGUI.showScreen("TICKET_MANAGEMENT");
                     break;
+                case "Reports":
+                    mainGUI.showScreen("REPORTS");
+                break;
                 case "Logout":
                     mainGUI.logout();
                     break;

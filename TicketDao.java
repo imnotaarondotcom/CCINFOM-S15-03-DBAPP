@@ -45,6 +45,33 @@ public class TicketDao {
             System.err.println("Error refunding ticket: " + e.getMessage());
         }
     }
+    
+    // Get tickets by seat ID
+    public List<Ticket> getTicketsBySeatId(int seatId) {
+    List<Ticket> tickets = new ArrayList<>();
+    String sql = "SELECT * FROM TicketBookings WHERE seat_id = ?";
+
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement pst = conn.prepareStatement(sql)) {
+        
+        pst.setInt(1, seatId);
+        try (ResultSet rs = pst.executeQuery()) {
+            while (rs.next()) {
+                Ticket t = new Ticket(
+                    rs.getInt("ticket_no"),
+                    rs.getInt("screening_id"),
+                    rs.getInt("seat_id"),
+                    rs.getString("ticket_status")
+                );
+                tickets.add(t);
+            }
+        }
+    } catch (SQLException e) {
+        System.err.println("Error fetching tickets by seat: " + e.getMessage());
+    }
+
+    return tickets;
+}
 
     // Get tickets by screening ID
     public List<Ticket> getTicketsByScreeningId(int screeningId) {
