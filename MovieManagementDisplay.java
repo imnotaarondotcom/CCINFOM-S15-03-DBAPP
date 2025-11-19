@@ -281,18 +281,30 @@ public class MovieManagementDisplay extends JPanel {
         
         int confirm = JOptionPane.showConfirmDialog(
             this, 
-            "Are you sure you want to delete movie: " + movieName + "?",
-            "Confirm Delete",
-            JOptionPane.YES_NO_OPTION
+            "WARNING: This will permanently delete movie: " + movieName + "\n\n" +
+            "This action will also delete:\n" +
+            "- ALL screenings for this movie\n" +
+            "- ALL ticket bookings for those screenings\n\n" +
+            "This cannot be undone!\n\n" +
+            "Are you sure you want to proceed?",
+            "Confirm Delete - WARNING",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
         );
         
         if (confirm == JOptionPane.YES_OPTION) {
             boolean deleted = movieDao.deleteMovie(movieId);
             if (deleted) {
-                JOptionPane.showMessageDialog(this, "Movie deleted successfully!");
+                JOptionPane.showMessageDialog(this, 
+                    "Movie and all associated screenings and tickets deleted successfully!",
+                    "Delete Successful", 
+                    JOptionPane.INFORMATION_MESSAGE);
                 loadMovieData();
             } else {
-                JOptionPane.showMessageDialog(this, "Error deleting movie!", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, 
+                    "Error deleting movie!",
+                    "Delete Failed", 
+                    JOptionPane.ERROR_MESSAGE);
             }
         }
     }

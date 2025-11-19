@@ -35,6 +35,31 @@ public class ScreeningManagementDisplay extends JPanel {
         header.setFont(new Font("Arial", Font.BOLD, 24));
         header.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
         
+        // Search panel
+        JPanel searchPanel = new JPanel(new FlowLayout());
+        JTextField searchField = new JTextField(20);
+        JButton searchButton = new JButton("Search");
+        JButton clearButton = new JButton("Clear");
+
+        searchButton.addActionListener(e -> {
+            String searchTerm = searchField.getText().trim();
+            if (!searchTerm.isEmpty()) {
+                searchScreeningsByMovie(searchTerm);
+            } else {
+                loadScreeningData(); // Reload all if search is empty
+            }
+        });
+
+        clearButton.addActionListener(e -> {
+            searchField.setText("");
+            loadScreeningData();
+        });
+
+        searchPanel.add(new JLabel("Search by Movie:"));
+        searchPanel.add(searchField);
+        searchPanel.add(searchButton);
+        searchPanel.add(clearButton);
+        
         // Table for displaying screenings
         String[] columnNames = {"Screening ID", "Movie", "Venue", "Room", "Date", "Start Time", "End Time", "Price", "Status"};
         tableModel = new DefaultTableModel(columnNames, 0) {
@@ -70,6 +95,7 @@ public class ScreeningManagementDisplay extends JPanel {
         
         JButton addButton = new JButton("Add Screening");
         JButton cancelButton = new JButton("Cancel Screening");
+        JButton completeButton = new JButton("Complete Screening");
         JButton refreshButton = new JButton("Refresh");
         JButton backButton = new JButton("Back");
         
@@ -77,12 +103,14 @@ public class ScreeningManagementDisplay extends JPanel {
         Font buttonFont = new Font("Arial", Font.PLAIN, 14);
         addButton.setFont(buttonFont);
         cancelButton.setFont(buttonFont);
+        completeButton.setFont(buttonFont);
         refreshButton.setFont(buttonFont);
         backButton.setFont(buttonFont);
         
         // Add action listeners
         addButton.addActionListener(e -> addScreening());
         cancelButton.addActionListener(e -> cancelScreening());
+        completeButton.addActionListener(e -> completeScreening()); 
         refreshButton.addActionListener(e -> loadScreeningData());
         backButton.addActionListener(e -> {
             if ("Admin".equals(accountType)) {
@@ -96,17 +124,25 @@ public class ScreeningManagementDisplay extends JPanel {
         if (!"Admin".equals(accountType)) {
             addButton.setVisible(false);
             cancelButton.setVisible(false);
+            completeButton.setVisible(false);
         }
         
         buttonPanel.add(addButton);
         buttonPanel.add(cancelButton);
+        buttonPanel.add(completeButton);
         buttonPanel.add(refreshButton);
         buttonPanel.add(backButton);
         
         // Add components to panel
         add(header, BorderLayout.NORTH);
-        add(scrollPane, BorderLayout.CENTER);
-        add(buttonPanel, BorderLayout.SOUTH);
+        add(searchPanel, BorderLayout.SOUTH);
+        
+        // Create center panel to hold both table and buttons
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.add(scrollPane, BorderLayout.CENTER);
+        centerPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        add(centerPanel, BorderLayout.CENTER);
     }
     
     private void loadScreeningData() {
@@ -143,6 +179,54 @@ public class ScreeningManagementDisplay extends JPanel {
 
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error loading screenings: " + e.getMessage(),
+                "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void searchScreeningsByMovie(String searchTerm) {
+        tableModel.setRowCount(0); // Clear existing data
+        
+        String sql = """
+            SELECT s.screening_id, v.venue_name, r.room_name, m.movie_name,
+                   m.genre, m.age_rating, s.screening_date,
+                   s.screening_start_time, s.screening_end_time, s.price, s.screening_status
+            FROM Screenings s
+            JOIN Venues v ON s.venue_id = v.venue_id
+            JOIN Rooms r ON s.room_id = r.room_id
+            JOIN Movies m ON s.movie_id = m.movie_id
+            WHERE m.movie_name LIKE ?
+            ORDER BY s.screening_date, s.screening_start_time
+        """;
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql)) {
+
+            pst.setString(1, "%" + searchTerm + "%");
+            ResultSet rs = pst.executeQuery();
+
+            boolean foundResults = false;
+            while (rs.next()) {
+                foundResults = true;
+                tableModel.addRow(new Object[]{
+                    rs.getInt("screening_id"),
+                    rs.getString("movie_name"),
+                    rs.getString("venue_name"),
+                    rs.getString("room_name"),
+                    rs.getDate("screening_date"),
+                    rs.getTime("screening_start_time"),
+                    rs.getTime("screening_end_time"),
+                    String.format("PHP %.2f", rs.getDouble("price")),
+                    rs.getString("screening_status")
+                });
+            }
+
+            if (!foundResults) {
+                JOptionPane.showMessageDialog(this, "No screenings found for movie: " + searchTerm, 
+                    "Search Results", JOptionPane.INFORMATION_MESSAGE);
+            }
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error searching screenings: " + e.getMessage(),
                 "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -314,14 +398,68 @@ public class ScreeningManagementDisplay extends JPanel {
         
         int confirm = JOptionPane.showConfirmDialog(
             this, 
-            "Are you sure you want to cancel screening for: " + movieName + "?",
-            "Confirm Cancellation",
+            "WARNING: This will cancel screening for: " + movieName + "\n\n" +
+            "This action will also cancel ALL ticket bookings for this screening.\n" +
+            "Customers will need to request refunds for cancelled tickets.\n\n" +
+            "Are you sure you want to proceed?",
+            "Confirm Cancellation - WARNING",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
+        );
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            boolean cancelled = screeningDao.cancelScreening(screeningId);
+            if (cancelled) {
+                JOptionPane.showMessageDialog(this, 
+                    "Screening and all associated tickets cancelled successfully!",
+                    "Cancellation Successful", 
+                    JOptionPane.INFORMATION_MESSAGE);
+                loadScreeningData();
+            } else {
+                JOptionPane.showMessageDialog(this, 
+                    "Error cancelling screening!",
+                    "Cancellation Failed", 
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void completeScreening() {
+        int selectedRow = screeningTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a screening to mark as complete!", 
+                "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        int screeningId = (int) tableModel.getValueAt(selectedRow, 0);
+        String movieName = (String) tableModel.getValueAt(selectedRow, 1);
+        String status = (String) tableModel.getValueAt(selectedRow, 8);
+        
+        if ("Completed".equals(status)) {
+            JOptionPane.showMessageDialog(this, "This screening is already completed!", 
+                "Already Completed", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        if ("Cancelled".equals(status)) {
+            JOptionPane.showMessageDialog(this, "Cannot complete a cancelled screening!", 
+                "Invalid Operation", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        int confirm = JOptionPane.showConfirmDialog(
+            this, 
+            "Mark screening as completed: " + movieName + "?\n\n" +
+            "This will update the screening status to 'Completed'.\n" +
+            "Ticket bookings will remain unchanged.",
+            "Confirm Complete Screening",
             JOptionPane.YES_NO_OPTION
         );
         
         if (confirm == JOptionPane.YES_OPTION) {
-            screeningDao.updateScreeningStatus(screeningId, "Cancelled");
-            JOptionPane.showMessageDialog(this, "Screening cancelled successfully!");
+            screeningDao.updateScreeningStatus(screeningId, "Completed");
+            JOptionPane.showMessageDialog(this, "Screening marked as completed successfully!");
             loadScreeningData();
         }
     }

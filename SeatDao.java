@@ -10,7 +10,7 @@ public class SeatDao {
 
         try (Connection conn = DBConnection.getConnection()) {
 
-            // 1. Get starting seat number
+            // Get starting seat number
             int startSeat = 0;
             try (PreparedStatement stmt = conn.prepareStatement(getMaxSeat)) {
                 stmt.setInt(1, roomId);
@@ -20,7 +20,7 @@ public class SeatDao {
                 }
             }
 
-            // 2. Insert seats
+            // Insert seats
             try (PreparedStatement stmt = conn.prepareStatement(insertSeat)) {
 
                 for (int i = 1; i <= count; i++) {

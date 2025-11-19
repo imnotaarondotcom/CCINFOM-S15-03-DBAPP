@@ -17,12 +17,10 @@ class AdminDisplay extends JPanel {
         header.setFont(new Font("Arial", Font.BOLD, 24));
         header.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
         
-        // User info panel - moved to LEFT side
         JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         userLabel = new JLabel("Welcome, " + mainGUI.getCurrentUsername());
         userLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         
-        // Logout button panel - on RIGHT side
         JPanel logoutPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton logoutButton = new JButton("Logout");
         
@@ -56,8 +54,7 @@ class AdminDisplay extends JPanel {
         add(headerPanel, BorderLayout.NORTH);
         add(buttonPanel, BorderLayout.CENTER);
     }
-    
-    // This method can be called to refresh the username display if needed
+
     public void refreshUserInfo() {
         if (userLabel != null) {
             userLabel.setText("Welcome, " + mainGUI.getCurrentUsername());

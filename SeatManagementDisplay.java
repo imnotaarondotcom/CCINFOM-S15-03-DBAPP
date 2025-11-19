@@ -63,25 +63,21 @@ public class SeatManagementDisplay extends JPanel {
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         
         JButton addSeatsButton = new JButton("Add Seats");
-        JButton deleteSeatButton = new JButton("Delete Selected Seat");
         JButton refreshButton = new JButton("Refresh");
         JButton backButton = new JButton("Back to Admin Panel");
         
         // Style buttons
         Font buttonFont = new Font("Arial", Font.PLAIN, 14);
         addSeatsButton.setFont(buttonFont);
-        deleteSeatButton.setFont(buttonFont);
         refreshButton.setFont(buttonFont);
         backButton.setFont(buttonFont);
         
         // Add action listeners
         addSeatsButton.addActionListener(e -> addSeats());
-        deleteSeatButton.addActionListener(e -> deleteSeat());
         refreshButton.addActionListener(e -> loadSeatsForRoom());
         backButton.addActionListener(e -> mainGUI.showScreen("ADMIN PANEL"));
         
         buttonPanel.add(addSeatsButton);
-        buttonPanel.add(deleteSeatButton);
         buttonPanel.add(refreshButton);
         buttonPanel.add(backButton);
         
@@ -93,16 +89,8 @@ public class SeatManagementDisplay extends JPanel {
     }
     
     private void loadRoomIds() {
-        // This method would need to get available room IDs from the database
-        // For now, we'll use a placeholder. You might need to add a method to RoomDao to get all room IDs
+
         roomComboBox.removeAllItems();
-        
-        // Placeholder - you'll need to implement this based on your database structure
-        // roomComboBox.addItem(1);
-        // roomComboBox.addItem(2);
-        // etc.
-        
-        // Temporary: Add some example room IDs
         for (int i = 1; i <= 10; i++) {
             roomComboBox.addItem(i);
         }
@@ -189,31 +177,5 @@ public class SeatManagementDisplay extends JPanel {
         addDialog.add(cancelButton);
         
         addDialog.setVisible(true);
-    }
-    
-    private void deleteSeat() {
-        int selectedRow = seatTable.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Please select a seat to delete!", 
-                "No Selection", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        int seatId = (int) tableModel.getValueAt(selectedRow, 0);
-        String seatNumber = (String) tableModel.getValueAt(selectedRow, 1);
-        int roomId = (int) tableModel.getValueAt(selectedRow, 2);
-        
-        int confirm = JOptionPane.showConfirmDialog(
-            this, 
-            "Are you sure you want to delete Seat " + seatNumber + " from Room " + roomId + "?",
-            "Confirm Delete",
-            JOptionPane.YES_NO_OPTION
-        );
-        
-        if (confirm == JOptionPane.YES_OPTION) {
-            seatDao.deleteSeat(seatId);
-            JOptionPane.showMessageDialog(this, "Seat deleted successfully!");
-            loadSeatsForRoom(); // Refresh the table
-        }
     }
 }

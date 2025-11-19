@@ -13,7 +13,6 @@ public class ReportsDisplay extends JPanel {
     private JTable reportTable;
     private DefaultTableModel tableModel;
     
-    // DAO instances
     private VenuesDao venuesDao;
     private CustomersDao customersDao;
     private MovieDao movieDao;
@@ -161,231 +160,284 @@ public class ReportsDisplay extends JPanel {
         reportTextArea.append("Select a report type from the buttons above to generate detailed analytics.\n\n");
         
         reportTextArea.append("AVAILABLE REPORTS:\n");
-        reportTextArea.append("• Ticket Revenue Report - Shows total tickets sold and revenue for each branch (Daily/Weekly)\n");
-        reportTextArea.append("• Customer Activity Report - Transaction frequency per customer (Weekly)\n");
-        reportTextArea.append("• Movie Performance Report - Tracks ticket sales and attendance by movie (Weekly/Monthly)\n");
-        reportTextArea.append("• Venue Utilization Report - Shows seat occupancy and room capacity usage (Monthly)\n\n");
+        reportTextArea.append("- Ticket Revenue Report - Shows total tickets sold and revenue for each branch\n");
+        reportTextArea.append("- Customer Activity Report - Transaction frequency per customer\n");
+        reportTextArea.append("- Movie Performance Report - Tracks ticket sales and attendance by movie\n");
+        reportTextArea.append("- Venue Utilization Report - Shows seat occupancy and room capacity usage\n\n");
         
         reportTextArea.append("TIP: Use the summary table for quick insights and the detailed area for comprehensive data.");
     }
     
     private void generateTicketRevenueReport() {
         clearReport();
-        appendReportHeader("TICKET REVENUE REPORT", "Daily/Weekly Revenue by Branch");
+        appendReportHeader("TICKET REVENUE REPORT", "Shows total tickets sold and revenue for each branch");
         
-        try {
-            // Use RoomDao's existing method for revenue by room
-            ArrayList<String> revenueData = roomDao.getRevenueByRoom();
+        String sql = """
+            SELECT 
+                v.venue_name AS branch,
+                COUNT(tb.ticket_no) AS tickets_sold,
+                SUM(s.price) AS total_revenue,
+                AVG(s.price) AS avg_ticket_price
+            FROM TicketBookings tb
+            JOIN Screenings s ON tb.screening_id = s.screening_id
+            JOIN Venues v ON s.venue_id = v.venue_id
+            WHERE tb.ticket_status = 'Booked'
+            GROUP BY v.venue_id, v.venue_name
+            ORDER BY total_revenue DESC
+        """;
+        
+        try (Connection conn = DBConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
             
-            reportTextArea.append(String.format("%-25s %-15s %s\n", 
-                "ROOM", "TICKETS SOLD", "TOTAL REVENUE"));
-            reportTextArea.append("-".repeat(60) + "\n");
+            reportTextArea.append(String.format("%-25s %-15s %-15s %s\n", 
+                "BRANCH", "TICKETS SOLD", "TOTAL REVENUE", "AVG PRICE"));
+            reportTextArea.append("-".repeat(70) + "\n");
             
             double grandTotalRevenue = 0;
             int grandTotalTickets = 0;
-            int venueCount = 0;
+            int branchCount = 0;
             
-            // Parse the revenue data from RoomDao
-            for (String revenueInfo : revenueData) {
-                reportTextArea.append(revenueInfo + "\n");
+            while (rs.next()) {
+                String branch = rs.getString("branch");
+                int ticketsSold = rs.getInt("tickets_sold");
+                double totalRevenue = rs.getDouble("total_revenue");
+                double avgPrice = rs.getDouble("avg_ticket_price");
                 
-                // Extract numbers from the formatted string for summary calculations
-                String[] parts = revenueInfo.split("\\|");
-                if (parts.length >= 3) {
-                    try {
-                        // Extract tickets sold
-                        String ticketsPart = parts[1].trim();
-                        int tickets = Integer.parseInt(ticketsPart.replaceAll("[^0-9]", ""));
-                        
-                        // Extract revenue
-                        String revenuePart = parts[2].trim();
-                        double revenue = Double.parseDouble(revenuePart.replaceAll("[^0-9.]", ""));
-                        
-                        grandTotalTickets += tickets;
-                        grandTotalRevenue += revenue;
-                        venueCount++;
-                    } catch (NumberFormatException e) {
-                        // Skip if parsing fails
-                    }
-                }
+                reportTextArea.append(String.format("%-25s %-15d $%-14.2f $%-13.2f\n", 
+                    branch, ticketsSold, totalRevenue, avgPrice));
+                
+                grandTotalRevenue += totalRevenue;
+                grandTotalTickets += ticketsSold;
+                branchCount++;
             }
             
-            reportTextArea.append("-".repeat(60) + "\n");
-            reportTextArea.append(String.format("GRAND TOTAL: %d tickets, $%.2f revenue\n", 
-                grandTotalTickets, grandTotalRevenue));
+            reportTextArea.append("-".repeat(70) + "\n");
+            reportTextArea.append(String.format("%-25s %-15d $%-14.2f\n", 
+                "GRAND TOTAL", grandTotalTickets, grandTotalRevenue));
             
             // Update summary table
-            tableModel.addRow(new Object[]{"Total Venues/Rooms", venueCount});
+            tableModel.addRow(new Object[]{"Total Branches", branchCount});
             tableModel.addRow(new Object[]{"Total Tickets Sold", grandTotalTickets});
             tableModel.addRow(new Object[]{"Total Revenue", String.format("$%.2f", grandTotalRevenue)});
-            tableModel.addRow(new Object[]{"Average Revenue per Room", 
-                String.format("$%.2f", venueCount > 0 ? grandTotalRevenue / venueCount : 0)});
+            tableModel.addRow(new Object[]{"Average Ticket Price", 
+                String.format("$%.2f", grandTotalTickets > 0 ? grandTotalRevenue / grandTotalTickets : 0)});
             
-        } catch (Exception e) {
+        } catch (SQLException e) {
             showError("Error generating ticket revenue report: " + e.getMessage());
         }
     }
     
     private void generateCustomerActivityReport() {
         clearReport();
-        appendReportHeader("CUSTOMER ACTIVITY REPORT", "Weekly Customer Transactions");
+        appendReportHeader("CUSTOMER ACTIVITY REPORT", "Transaction frequency per customer");
         
-        try {
-            // Get all customers and their activity using existing DAO methods
-            ArrayList<Customers> allCustomers = customersDao.getAllCustomers();
+        String sql = """
+            SELECT 
+                c.username AS customer_name,
+                COUNT(tb.ticket_no) AS total_tickets,
+                SUM(s.price) AS total_spent,
+                COUNT(DISTINCT DATE(tb.date_booked)) AS transaction_days
+            FROM TicketBookings tb
+            JOIN Customers c ON tb.customer_id = c.customer_id
+            JOIN Screenings s ON tb.screening_id = s.screening_id
+            WHERE tb.ticket_status = 'Booked'
+            GROUP BY c.customer_id, c.username
+            HAVING COUNT(tb.ticket_no) >= 1
+            ORDER BY total_tickets DESC, total_spent DESC
+            LIMIT 50
+        """;
+        
+        try (Connection conn = DBConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
             
-            reportTextArea.append(String.format("%-20s %-12s %-15s %s\n", 
-                "CUSTOMER", "ACCOUNT TYPE", "PHONE", "USERNAME"));
-            reportTextArea.append("-".repeat(65) + "\n");
+            reportTextArea.append(String.format("%-25s %-15s %-15s %s\n", 
+                "CUSTOMER", "TICKETS", "TOTAL SPENT", "TRANSACTION DAYS"));
+            reportTextArea.append("-".repeat(70) + "\n");
             
             int totalCustomers = 0;
-            int adminCount = 0;
-            int customerCount = 0;
+            int totalTickets = 0;
+            double totalRevenue = 0;
+            int totalTransactionDays = 0;
             
-            for (Customers customer : allCustomers) {
-                reportTextArea.append(String.format("%-20s %-12s %-15s %s\n", 
-                    customer.getName(), 
-                    customer.getAccountType(),
-                    customer.getNumber(),
-                    customer.getName()));
+            while (rs.next()) {
+                String customer = rs.getString("customer_name");
+                int tickets = rs.getInt("total_tickets");
+                double spent = rs.getDouble("total_spent");
+                int transactionDays = rs.getInt("transaction_days");
+                
+                reportTextArea.append(String.format("%-25s %-15d $%-14.2f %-15d\n", 
+                    customer, tickets, spent, transactionDays));
                 
                 totalCustomers++;
-                if ("Admin".equals(customer.getAccountType())) {
-                    adminCount++;
-                } else {
-                    customerCount++;
-                }
+                totalTickets += tickets;
+                totalRevenue += spent;
+                totalTransactionDays += transactionDays;
             }
             
-            reportTextArea.append("-".repeat(65) + "\n");
-            reportTextArea.append(String.format("TOTAL CUSTOMERS: %d (Admins: %d, Customers: %d)\n", 
-                totalCustomers, adminCount, customerCount));
+            reportTextArea.append("-".repeat(70) + "\n");
+            reportTextArea.append(String.format("%-25s %-15d $%-14.2f\n", 
+                "TOTAL (" + totalCustomers + " customers)", totalTickets, totalRevenue));
             
             // Update summary table
-            tableModel.addRow(new Object[]{"Total Users", totalCustomers});
-            tableModel.addRow(new Object[]{"Admin Accounts", adminCount});
-            tableModel.addRow(new Object[]{"Customer Accounts", customerCount});
-            tableModel.addRow(new Object[]{"Admin Percentage", 
-                String.format("%.1f%%", totalCustomers > 0 ? (adminCount * 100.0 / totalCustomers) : 0)});
+            tableModel.addRow(new Object[]{"Active Customers", totalCustomers});
+            tableModel.addRow(new Object[]{"Total Tickets Purchased", totalTickets});
+            tableModel.addRow(new Object[]{"Total Customer Revenue", String.format("$%.2f", totalRevenue)});
+            tableModel.addRow(new Object[]{"Avg Tickets per Customer", 
+                String.format("%.1f", totalCustomers > 0 ? (double)totalTickets / totalCustomers : 0)});
+            tableModel.addRow(new Object[]{"Avg Transaction Days", 
+                String.format("%.1f", totalCustomers > 0 ? (double)totalTransactionDays / totalCustomers : 0)});
             
-        } catch (Exception e) {
+        } catch (SQLException e) {
             showError("Error generating customer activity report: " + e.getMessage());
         }
     }
     
     private void generateMoviePerformanceReport() {
         clearReport();
-        appendReportHeader("MOVIE PERFORMANCE REPORT", "Weekly/Monthly Movie Rankings");
+        appendReportHeader("MOVIE PERFORMANCE REPORT", "Tracks ticket sales and attendance by movie");
         
-        try {
-            // Use MovieDao to get all movies
-            ArrayList<Movie> allMovies = movieDao.getAllMovies();
+        String sql = """
+            SELECT 
+                m.movie_name,
+                m.genre,
+                m.age_rating,
+                COUNT(tb.ticket_no) AS tickets_sold,
+                SUM(s.price) AS total_revenue,
+                COUNT(DISTINCT s.screening_id) AS total_screenings
+            FROM Movies m
+            JOIN Screenings s ON m.movie_id = s.movie_id
+            LEFT JOIN TicketBookings tb ON s.screening_id = tb.screening_id AND tb.ticket_status = 'Booked'
+            GROUP BY m.movie_id, m.movie_name, m.genre, m.age_rating
+            ORDER BY total_revenue DESC
+        """;
+        
+        try (Connection conn = DBConnection.getConnection();
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql)) {
             
-            reportTextArea.append(String.format("%-25s %-12s %-8s %s\n", 
-                "MOVIE", "GENRE", "RATING", "DURATION"));
-            reportTextArea.append("-".repeat(60) + "\n");
+            // Header with proper spacing
+            reportTextArea.append(String.format("%-30s %-15s %-8s %-8s %-12s %s\n", 
+                "MOVIE", "GENRE", "RATING", "TICKETS", "REVENUE", "SCREENINGS"));
+            reportTextArea.append("-".repeat(95) + "\n");
             
             int totalMovies = 0;
-            int totalDuration = 0;
-            int pgCount = 0, pg13Count = 0, rCount = 0, gCount = 0;
+            int totalTickets = 0;
+            double totalRevenue = 0;
+            int totalScreenings = 0;
             
-            for (Movie movie : allMovies) {
-                String movieName = movie.getMovieName();
-                if (movieName.length() > 24) {
-                    movieName = movieName.substring(0, 24) + "...";
+            while (rs.next()) {
+                String movie = rs.getString("movie_name");
+                String genre = rs.getString("genre");
+                String rating = rs.getString("age_rating");
+                int tickets = rs.getInt("tickets_sold");
+                double revenue = rs.getDouble("total_revenue");
+                int screenings = rs.getInt("total_screenings");
+                
+                // Truncate long movie names but keep them readable
+                if (movie.length() > 27) {
+                    movie = movie.substring(0, 27) + "...";
+                }
+                if (genre.length() > 14) {
+                    genre = genre.substring(0, 14);
                 }
                 
-                reportTextArea.append(String.format("%-25s %-12s %-8s %d mins\n", 
-                    movieName, 
-                    movie.getGenre(),
-                    movie.getAgeRating(),
-                    movie.getDuration()));
+                reportTextArea.append(String.format("%-30s %-15s %-8s %-8d $%-11.2f %-12d\n", 
+                    movie, genre, rating, tickets, revenue, screenings));
                 
                 totalMovies++;
-                totalDuration += movie.getDuration();
-                
-                // Count by rating
-                switch (movie.getAgeRating()) {
-                    case "PG": pgCount++; break;
-                    case "PG-13": pg13Count++; break;
-                    case "R": rCount++; break;
-                    case "G": gCount++; break;
-                }
+                totalTickets += tickets;
+                totalRevenue += revenue;
+                totalScreenings += screenings;
             }
             
-            reportTextArea.append("-".repeat(60) + "\n");
-            reportTextArea.append(String.format("TOTAL MOVIES: %d | AVERAGE DURATION: %.1f mins\n", 
-                totalMovies, totalMovies > 0 ? (double)totalDuration / totalMovies : 0));
+            reportTextArea.append("-".repeat(95) + "\n");
+            reportTextArea.append(String.format("%-30s %-15s %-8s %-8d $%-11.2f %-12d\n", 
+                "TOTAL (" + totalMovies + " movies)", "", "", totalTickets, totalRevenue, totalScreenings));
             
             // Update summary table
             tableModel.addRow(new Object[]{"Total Movies", totalMovies});
-            tableModel.addRow(new Object[]{"Average Duration", 
-                String.format("%.1f mins", totalMovies > 0 ? (double)totalDuration / totalMovies : 0)});
-            tableModel.addRow(new Object[]{"PG Movies", pgCount});
-            tableModel.addRow(new Object[]{"PG-13 Movies", pg13Count});
-            tableModel.addRow(new Object[]{"R Rated Movies", rCount});
-            tableModel.addRow(new Object[]{"G Rated Movies", gCount});
+            tableModel.addRow(new Object[]{"Total Tickets Sold", totalTickets});
+            tableModel.addRow(new Object[]{"Total Revenue", String.format("$%.2f", totalRevenue)});
+            tableModel.addRow(new Object[]{"Total Screenings", totalScreenings});
+            tableModel.addRow(new Object[]{"Average Revenue per Movie", 
+                String.format("$%.2f", totalMovies > 0 ? totalRevenue / totalMovies : 0)});
+            tableModel.addRow(new Object[]{"Average Tickets per Screening", 
+                String.format("%.1f", totalScreenings > 0 ? (double)totalTickets / totalScreenings : 0)});
             
-        } catch (Exception e) {
+        } catch (SQLException e) {
             showError("Error generating movie performance report: " + e.getMessage());
         }
     }
     
     private void generateVenueUtilizationReport() {
         clearReport();
-        appendReportHeader("VENUE UTILIZATION REPORT", "Monthly Seat Occupancy & Capacity Usage");
+        appendReportHeader("VENUE UTILIZATION REPORT", "Shows seat occupancy and room capacity usage");
         
-        try {
-            // Use VenuesDao and RoomDao methods
-            ArrayList<Venues> allVenues = venuesDao.getAllVenues();
-            ArrayList<String> capacityData = roomDao.getVenueCapacityVsAttendance();
-            ArrayList<String> screeningData = roomDao.getTotalScreeningsByVenue();
+        String sql = """
+            SELECT 
+                v.venue_name,
+                COUNT(DISTINCT r.room_id) AS total_rooms,
+                COUNT(DISTINCT s.seat_id) AS total_seats,
+                COUNT(DISTINCT tb.ticket_no) AS occupied_seats,
+                COUNT(DISTINCT sc.screening_id) AS total_screenings,
+                ROUND((COUNT(DISTINCT tb.ticket_no) * 100.0 / COUNT(DISTINCT s.seat_id)), 2) AS occupancy_rate
+            FROM Venues v
+            LEFT JOIN Rooms r ON v.venue_id = r.venue_id
+            LEFT JOIN Seats s ON r.room_id = s.room_id
+            LEFT JOIN Screenings sc ON r.room_id = sc.room_id
+            LEFT JOIN TicketBookings tb ON sc.screening_id = tb.screening_id AND tb.ticket_status = 'Booked'
+            GROUP BY v.venue_id, v.venue_name
+            ORDER BY occupancy_rate DESC
+        """;
+        
+        try (Connection conn = DBConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
             
-            reportTextArea.append(String.format("%-20s %-12s %-15s %s\n", 
-                "VENUE", "ADDRESS", "SCREENINGS", "TICKETS SOLD"));
-            reportTextArea.append("-".repeat(70) + "\n");
+            reportTextArea.append(String.format("%-20s %-8s %-12s %-15s %-12s %s\n", 
+                "VENUE", "ROOMS", "TOTAL SEATS", "OCCUPIED", "OCCUPANCY %", "SCREENINGS"));
+            reportTextArea.append("-".repeat(80) + "\n");
             
             int totalVenues = 0;
+            int totalRooms = 0;
+            int totalSeats = 0;
+            int totalOccupied = 0;
             int totalScreenings = 0;
-            int totalTickets = 0;
             
-            // Display venue basic info
-            for (Venues venue : allVenues) {
-                int ticketsSold = venuesDao.getTicketsSoldByVenue(venue.getVenue_id());
-                ArrayList<String> screenings = venuesDao.getScreeningsByVenue(venue.getVenue_id());
+            while (rs.next()) {
+                String venue = rs.getString("venue_name");
+                int rooms = rs.getInt("total_rooms");
+                int seats = rs.getInt("total_seats");
+                int occupied = rs.getInt("occupied_seats");
+                int screenings = rs.getInt("total_screenings");
+                double occupancy = rs.getDouble("occupancy_rate");
                 
-                reportTextArea.append(String.format("%-20s %-12s %-15d %d\n", 
-                    venue.getVenue_name(),
-                    venue.getAddress().length() > 11 ? venue.getAddress().substring(0, 11) + "..." : venue.getAddress(),
-                    screenings.size(),
-                    ticketsSold));
+                reportTextArea.append(String.format("%-20s %-8d %-12d %-15d %-11.1f%% %-12d\n", 
+                    venue, rooms, seats, occupied, occupancy, screenings));
                 
                 totalVenues++;
-                totalScreenings += screenings.size();
-                totalTickets += ticketsSold;
+                totalRooms += rooms;
+                totalSeats += seats;
+                totalOccupied += occupied;
+                totalScreenings += screenings;
             }
             
-            reportTextArea.append("-".repeat(70) + "\n");
-            reportTextArea.append(String.format("TOTAL: %d venues, %d screenings, %d tickets\n", 
-                totalVenues, totalScreenings, totalTickets));
-            
-            // Add capacity and occupancy data
-            reportTextArea.append("\nCAPACITY AND OCCUPANCY ANALYSIS:\n");
-            reportTextArea.append("-".repeat(70) + "\n");
-            for (String capacityInfo : capacityData) {
-                reportTextArea.append(capacityInfo + "\n");
-            }
+            reportTextArea.append("-".repeat(80) + "\n");
+            double overallOccupancy = totalSeats > 0 ? (double)totalOccupied / totalSeats * 100 : 0;
+            reportTextArea.append(String.format("%-20s %-8d %-12d %-15d %-11.1f%% %-12d\n", 
+                "TOTAL (" + totalVenues + " venues)", totalRooms, totalSeats, totalOccupied, overallOccupancy, totalScreenings));
             
             // Update summary table
             tableModel.addRow(new Object[]{"Total Venues", totalVenues});
+            tableModel.addRow(new Object[]{"Total Rooms", totalRooms});
+            tableModel.addRow(new Object[]{"Total Seats", totalSeats});
+            tableModel.addRow(new Object[]{"Occupied Seats", totalOccupied});
+            tableModel.addRow(new Object[]{"Overall Occupancy", String.format("%.1f%%", overallOccupancy)});
             tableModel.addRow(new Object[]{"Total Screenings", totalScreenings});
-            tableModel.addRow(new Object[]{"Total Tickets Sold", totalTickets});
-            tableModel.addRow(new Object[]{"Average Screenings per Venue", 
-                String.format("%.1f", totalVenues > 0 ? (double)totalScreenings / totalVenues : 0)});
-            tableModel.addRow(new Object[]{"Average Tickets per Venue", 
-                String.format("%.1f", totalVenues > 0 ? (double)totalTickets / totalVenues : 0)});
             
-        } catch (Exception e) {
+        } catch (SQLException e) {
             showError("Error generating venue utilization report: " + e.getMessage());
         }
     }

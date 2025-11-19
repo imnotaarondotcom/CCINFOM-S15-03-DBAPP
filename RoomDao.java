@@ -42,19 +42,65 @@ public class RoomDao {
     }
 
     // DELETE ROOM
-    public void deleteRoom(int roomId) {
-        String sql = "DELETE FROM Rooms WHERE room_id = ?";
-
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pst = conn.prepareStatement(sql)) {
-
-            pst.setInt(1, roomId);
-            pst.executeUpdate();
-
-            System.out.println("Room deleted successfully!");
-
+    public boolean deleteRoom(int roomId) {
+        String deleteTicketsFromScreeningsSQL = """
+            DELETE tb FROM TicketBookings tb 
+            JOIN Screenings s ON tb.screening_id = s.screening_id 
+            WHERE s.room_id = ?
+        """;
+        String deleteTicketsFromSeatsSQL = """
+            DELETE tb FROM TicketBookings tb 
+            JOIN Seats se ON tb.seat_id = se.seat_id 
+            WHERE se.room_id = ?
+        """;
+        String deleteScreeningsSQL = "DELETE FROM Screenings WHERE room_id = ?";
+        String deleteSeatsSQL = "DELETE FROM Seats WHERE room_id = ?";
+        String deleteRoomSQL = "DELETE FROM Rooms WHERE room_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            
+            try {
+                // delete all tickets for screenings in this room
+                try (PreparedStatement pst = conn.prepareStatement(deleteTicketsFromScreeningsSQL)) {
+                    pst.setInt(1, roomId);
+                    pst.executeUpdate();
+                }
+                
+                // delete all tickets that reference seats in this room
+                try (PreparedStatement pst = conn.prepareStatement(deleteTicketsFromSeatsSQL)) {
+                    pst.setInt(1, roomId);
+                    pst.executeUpdate();
+                }
+                
+                // delete all screenings in this room
+                try (PreparedStatement pst = conn.prepareStatement(deleteScreeningsSQL)) {
+                    pst.setInt(1, roomId);
+                    pst.executeUpdate();
+                }
+                
+                // delete all seats in this room
+                try (PreparedStatement pst = conn.prepareStatement(deleteSeatsSQL)) {
+                    pst.setInt(1, roomId);
+                    pst.executeUpdate();
+                }
+                
+                // delete the room
+                try (PreparedStatement pst = conn.prepareStatement(deleteRoomSQL)) {
+                    pst.setInt(1, roomId);
+                    int updated = pst.executeUpdate();
+                    conn.commit();
+                    return updated > 0;
+                }
+                
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+            
         } catch (SQLException e) {
             System.err.println("Error deleting room: " + e.getMessage());
+            return false;
         }
     }
 

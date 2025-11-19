@@ -133,27 +133,49 @@ public class MovieDao
 
 
     // DELETE MOVIE
-    public boolean deleteMovie(int movieId) 
-    {
-        String command = "DELETE FROM Movies WHERE movie_id = ?";
-
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement statement = conn.prepareStatement(command)) 
-        {
-
-            statement.setInt(1, movieId);
-            int updated = statement.executeUpdate();
-
-            return updated > 0;
-
-        } 
-        catch (SQLException e) 
-        {
+    public boolean deleteMovie(int movieId) {
+        String deleteTicketsSQL = """
+            DELETE tb FROM TicketBookings tb 
+            JOIN Screenings s ON tb.screening_id = s.screening_id 
+            WHERE s.movie_id = ?
+        """;
+        String deleteScreeningsSQL = "DELETE FROM Screenings WHERE movie_id = ?";
+        String deleteMovieSQL = "DELETE FROM Movies WHERE movie_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            
+            try {
+                // delete all tickets for screenings of this movie
+                try (PreparedStatement pst = conn.prepareStatement(deleteTicketsSQL)) {
+                    pst.setInt(1, movieId);
+                    pst.executeUpdate();
+                }
+                
+                // delete all screenings for this movie
+                try (PreparedStatement pst = conn.prepareStatement(deleteScreeningsSQL)) {
+                    pst.setInt(1, movieId);
+                    pst.executeUpdate();
+                }
+                
+                // delete the movie
+                try (PreparedStatement pst = conn.prepareStatement(deleteMovieSQL)) {
+                    pst.setInt(1, movieId);
+                    int updated = pst.executeUpdate();
+                    conn.commit();
+                    return updated > 0;
+                }
+                
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+            
+        } catch (SQLException e) {
             System.out.println("Error deleting movie: " + e.getMessage());
+            return false;
         }
-        return false;
     }
-
 
     // SEARCH MOVIES BY NAME
     public ArrayList<Movie> searchMovieName(String keyword) 

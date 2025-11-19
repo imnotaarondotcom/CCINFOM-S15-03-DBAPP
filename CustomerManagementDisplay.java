@@ -238,22 +238,32 @@ public class CustomerManagementDisplay extends JPanel {
         
         int confirm = JOptionPane.showConfirmDialog(
             this, 
-            "Are you sure you want to delete customer: " + username + "?",
-            "Confirm Delete",
-            JOptionPane.YES_NO_OPTION
+            "WARNING: This will permanently delete customer: " + username + "\n\n" +
+            "This action will also delete ALL ticket bookings associated with this customer.\n" +
+            "This cannot be undone!\n\n" +
+            "Are you sure you want to proceed?",
+            "Confirm Delete - WARNING",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
         );
         
         if (confirm == JOptionPane.YES_OPTION) {
             boolean deleted = customersDao.deleteCustomer(customerId);
             if (deleted) {
-                JOptionPane.showMessageDialog(this, "Customer deleted successfully!");
+                JOptionPane.showMessageDialog(this, 
+                    "Customer and all associated tickets deleted successfully!",
+                    "Delete Successful", 
+                    JOptionPane.INFORMATION_MESSAGE);
                 loadCustomerData();
             } else {
-                JOptionPane.showMessageDialog(this, "Error deleting customer!", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, 
+                    "Error deleting customer! Customer may have active bookings.",
+                    "Delete Failed", 
+                    JOptionPane.ERROR_MESSAGE);
             }
         }
     }
-    
+        
     private boolean validateInput(String phone, String username, String password) {
         if (phone.trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Phone number cannot be empty!", "Validation Error", JOptionPane.ERROR_MESSAGE);

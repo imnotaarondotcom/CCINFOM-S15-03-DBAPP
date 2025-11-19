@@ -83,21 +83,36 @@ public class CustomersDao {
 
 
     public boolean deleteCustomer(int customerId) {
-        String command = "DELETE FROM Customers WHERE customer_id = ?";
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(command)) {
-
-            statement.setInt(1, customerId);
-            int updated = statement.executeUpdate();
-
-            return updated > 0;
-
-        } catch (SQLException error) {
-            System.out.println("Error deleting customer: " + error.getMessage());
+        String deleteTicketsSQL = "DELETE FROM TicketBookings WHERE customer_id = ?";
+        String deleteCustomerSQL = "DELETE FROM Customers WHERE customer_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            
+            try {
+                // delete all tickets for this customer
+                try (PreparedStatement pst = conn.prepareStatement(deleteTicketsSQL)) {
+                    pst.setInt(1, customerId);
+                    pst.executeUpdate();
+                }
+                
+                // delete the customer
+                try (PreparedStatement pst = conn.prepareStatement(deleteCustomerSQL)) {
+                    pst.setInt(1, customerId);
+                    int updated = pst.executeUpdate();
+                    conn.commit();
+                    return updated > 0;
+                }
+                
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+            
+        } catch (SQLException e) {
+            System.out.println("Error deleting customer: " + e.getMessage());
+            return false;
         }
-
-        return false;
     }
 
 

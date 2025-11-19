@@ -173,7 +173,7 @@ public class RoomManagementDisplay extends JPanel {
         JButton cancelButton = new JButton("Cancel");
         
         saveButton.addActionListener(e -> {
-            if (validateRoomInput(nameField.getText(), typeField.getText(), "1")) { // Venue ID not needed for edit
+            if (validateRoomInput(nameField.getText(), typeField.getText(), "1")) {
                 roomDao.updateRoom(roomId, nameField.getText(), typeField.getText());
                 JOptionPane.showMessageDialog(editDialog, "Room updated successfully!");
                 loadRoomData();
@@ -202,15 +202,32 @@ public class RoomManagementDisplay extends JPanel {
         
         int confirm = JOptionPane.showConfirmDialog(
             this, 
-            "Are you sure you want to delete room: " + roomName + "?",
-            "Confirm Delete",
-            JOptionPane.YES_NO_OPTION
+            "WARNING: This will permanently delete room: " + roomName + "\n\n" +
+            "This action will also delete:\n" +
+            "- ALL seats in this room\n" +
+            "- ALL screenings scheduled in this room\n" +
+            "- ALL ticket bookings for those screenings\n\n" +
+            "This cannot be undone!\n\n" +
+            "Are you sure you want to proceed?",
+            "Confirm Delete - WARNING",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
         );
         
         if (confirm == JOptionPane.YES_OPTION) {
-            roomDao.deleteRoom(roomId);
-            JOptionPane.showMessageDialog(this, "Room deleted successfully!");
-            loadRoomData();
+            boolean deleted = roomDao.deleteRoom(roomId);
+            if (deleted) {
+                JOptionPane.showMessageDialog(this, 
+                    "Room and all associated seats, screenings, and tickets deleted successfully!",
+                    "Delete Successful", 
+                    JOptionPane.INFORMATION_MESSAGE);
+                loadRoomData();
+            } else {
+                JOptionPane.showMessageDialog(this, 
+                    "Error deleting room!",
+                    "Delete Failed", 
+                    JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
     

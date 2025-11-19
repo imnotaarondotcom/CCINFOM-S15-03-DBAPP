@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 public class ScreeningDao {
 
-    // Add a new screening (assumes room availability already checked)
     public boolean addScreening(int movieId, int venueId, int roomId, double price, LocalDate date, LocalTime startTime, LocalTime endTime) {
         String insertSQL = """
             INSERT INTO Screenings 
@@ -65,7 +64,7 @@ public class ScreeningDao {
                             rs.getInt("movie_id"),
                             rs.getInt("venue_id"),
                             rs.getInt("room_id"),
-                            rs.getDouble("price"),                      // price
+                            rs.getDouble("price"),
                             rs.getDate("screening_date").toLocalDate(),
                             rs.getTime("screening_start_time").toLocalTime(),
                             rs.getTime("screening_end_time").toLocalTime(),
@@ -119,36 +118,29 @@ public class ScreeningDao {
         return false;
     }
 
-    public boolean cancelScreeningAndTickets(int screeningId) {
-        String cancelTicketsSQL = "UPDATE TicketBookings SET ticket_status = 'Cancelled' WHERE screening_id = ? AND ticket_status = 'Booked'";
-        String cancelScreeningSQL = "UPDATE Screenings SET screening_status = 'Cancelled' WHERE screening_id = ?";
+    public boolean cancelScreening(int screeningId) {
+        String updateTicketsSQL = "UPDATE TicketBookings SET ticket_status = 'Cancelled' WHERE screening_id = ? AND ticket_status = 'Booked'";
+        String updateScreeningSQL = "UPDATE Screenings SET screening_status = 'Cancelled' WHERE screening_id = ?";
         
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
-            
             try {
-                // Cancel all booked tickets
-                try (PreparedStatement pst = conn.prepareStatement(cancelTicketsSQL)) {
+                try (PreparedStatement pst = conn.prepareStatement(updateTicketsSQL)) {
                     pst.setInt(1, screeningId);
                     pst.executeUpdate();
                 }
-                
-                // Cancel the screening
-                try (PreparedStatement pst = conn.prepareStatement(cancelScreeningSQL)) {
+                try (PreparedStatement pst = conn.prepareStatement(updateScreeningSQL)) {
                     pst.setInt(1, screeningId);
-                    pst.executeUpdate();
+                    int updated = pst.executeUpdate();
+                    conn.commit();
+                    return updated > 0;
                 }
-                
-                conn.commit();
-                return true;
-                
             } catch (SQLException e) {
                 conn.rollback();
                 throw e;
             }
-            
         } catch (SQLException e) {
-            System.out.println("Error cancelling screening and tickets: " + e.getMessage());
+            System.out.println("Error cancelling screening: " + e.getMessage());
             return false;
         }
     }

@@ -19,10 +19,10 @@ public class MainGUI extends JFrame {
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
         
-        // Add login screen only initially
+        // Show login first
         mainPanel.add(new LoginDisplay(this), "LOGIN");
         
-        // Admin and Customer displays will be created dynamically after login
+        // Admin and customer displays will be created dynamically after login
         add(mainPanel);
         cardLayout.show(mainPanel, "LOGIN");
     }
@@ -94,8 +94,7 @@ public class MainGUI extends JFrame {
             mainPanel.add(new ScreeningManagementDisplay(this, currentUserType), "SCREENING_MANAGEMENT");
         }
     }
-    
-    // Getters for user information
+
     public int getCurrentUserId() {
         return currentUserId;
     }
