@@ -1,9 +1,7 @@
+import java.awt.*;
+import java.util.ArrayList;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
 
 public class VenueManagementDisplay extends JPanel {
     private MainGUI mainGUI;
@@ -20,12 +18,10 @@ public class VenueManagementDisplay extends JPanel {
     }
     
     private void initializeComponents() {
-        // Header
         JLabel header = new JLabel("Venue Management", JLabel.CENTER);
         header.setFont(new Font("Arial", Font.BOLD, 24));
         header.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
         
-        // Table for displaying venues
         String[] columnNames = {"ID", "Venue Name", "Address"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
@@ -43,7 +39,6 @@ public class VenueManagementDisplay extends JPanel {
         JScrollPane scrollPane = new JScrollPane(venueTable);
         scrollPane.setBorder(BorderFactory.createTitledBorder("Venues List"));
         
-        // Search panel
         JPanel searchPanel = new JPanel(new FlowLayout());
         JTextField searchField = new JTextField(20);
         JButton searchButton = new JButton("Search");
@@ -60,8 +55,7 @@ public class VenueManagementDisplay extends JPanel {
         searchPanel.add(new JLabel("Search:"));
         searchPanel.add(searchField);
         searchPanel.add(searchButton);
-        
-        // Button panel
+
         JPanel buttonPanel = new JPanel(new FlowLayout());
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         
@@ -71,15 +65,13 @@ public class VenueManagementDisplay extends JPanel {
         JButton refreshButton = new JButton("Refresh All");
         JButton backButton = new JButton("Back to Admin Panel");
         
-        // Style buttons
         Font buttonFont = new Font("Arial", Font.PLAIN, 14);
         addButton.setFont(buttonFont);
         editButton.setFont(buttonFont);
         detailsButton.setFont(buttonFont);
         refreshButton.setFont(buttonFont);
         backButton.setFont(buttonFont);
-        
-        // Add action listeners
+
         addButton.addActionListener(e -> addVenue());
         editButton.addActionListener(e -> editVenue());
         detailsButton.addActionListener(e -> viewVenueDetails());
@@ -95,7 +87,6 @@ public class VenueManagementDisplay extends JPanel {
         buttonPanel.add(refreshButton);
         buttonPanel.add(backButton);
         
-        // Layout organization
         setLayout(new BorderLayout());
         add(header, BorderLayout.NORTH);
         
@@ -157,7 +148,7 @@ public class VenueManagementDisplay extends JPanel {
         saveButton.addActionListener(e -> {
             if (validateVenueInput(nameField.getText(), addressField.getText())) {
                 Venues newVenue = new Venues(
-                    0, // ID will be auto-generated
+                    0,
                     nameField.getText(),
                     addressField.getText()
                 );
@@ -216,15 +207,13 @@ public class VenueManagementDisplay extends JPanel {
         
         saveButton.addActionListener(e -> {
             if (validateVenueInput(nameField.getText(), addressField.getText())) {
-                // Check for duplicate name
                 if (nameField.getText().equals(venue.getVenue_name())) {
                     JOptionPane.showMessageDialog(editDialog, 
                         "The new name cannot be the same as the old name!", 
                         "Validation Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
-                
-                // Check if name already exists
+   
                 ArrayList<Venues> existing = venuesDao.searchVenueName(nameField.getText());
                 boolean sameName = false;
                 for (Venues v : existing) {
@@ -281,10 +270,8 @@ public class VenueManagementDisplay extends JPanel {
         detailsDialog.setSize(500, 400);
         detailsDialog.setLocationRelativeTo(this);
         
-        // Create tabbed pane for different details
         JTabbedPane tabbedPane = new JTabbedPane();
         
-        // Movies tab
         JPanel moviesPanel = new JPanel(new BorderLayout());
         DefaultListModel<String> moviesModel = new DefaultListModel<>();
         JList<String> moviesList = new JList<>(moviesModel);
@@ -292,8 +279,7 @@ public class VenueManagementDisplay extends JPanel {
         moviesPanel.add(new JLabel("Movies Screening Here:"), BorderLayout.NORTH);
         moviesPanel.add(new JScrollPane(moviesList), BorderLayout.CENTER);
         tabbedPane.addTab("Movies", moviesPanel);
-        
-        // Rooms tab
+
         JPanel roomsPanel = new JPanel(new BorderLayout());
         DefaultListModel<String> roomsModel = new DefaultListModel<>();
         JList<String> roomsList = new JList<>(roomsModel);
@@ -302,7 +288,6 @@ public class VenueManagementDisplay extends JPanel {
         roomsPanel.add(new JScrollPane(roomsList), BorderLayout.CENTER);
         tabbedPane.addTab("Rooms", roomsPanel);
         
-        // Screenings tab
         JPanel screeningsPanel = new JPanel(new BorderLayout());
         DefaultListModel<String> screeningsModel = new DefaultListModel<>();
         JList<String> screeningsList = new JList<>(screeningsModel);
@@ -310,14 +295,26 @@ public class VenueManagementDisplay extends JPanel {
         screeningsPanel.add(new JLabel("Screening Schedule:"), BorderLayout.NORTH);
         screeningsPanel.add(new JScrollPane(screeningsList), BorderLayout.CENTER);
         tabbedPane.addTab("Screenings", screeningsPanel);
-        
-        // Ticket Sales tab
+
         JPanel salesPanel = new JPanel(new BorderLayout());
         int ticketsSold = venuesDao.getTicketsSoldByVenue(venueId);
         JLabel salesLabel = new JLabel("Total Tickets Sold: " + ticketsSold, JLabel.CENTER);
         salesLabel.setFont(new Font("Arial", Font.BOLD, 16));
         salesPanel.add(salesLabel, BorderLayout.CENTER);
         tabbedPane.addTab("Ticket Sales", salesPanel);
+        
+        JPanel utilizationPanel = new JPanel(new BorderLayout());
+        DefaultListModel<String> utilizationModel = new DefaultListModel<>();
+        JList<String> utilizationList = new JList<>(utilizationModel);
+        utilizationList.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        loadVenueUtilization(venueId, utilizationModel);
+
+        JLabel utilizationLabel = new JLabel("Venue Utilization Analysis:", JLabel.CENTER);
+        utilizationLabel.setFont(new Font("Arial", Font.BOLD, 14));
+
+        utilizationPanel.add(utilizationLabel, BorderLayout.NORTH);
+        utilizationPanel.add(new JScrollPane(utilizationList), BorderLayout.CENTER);
+        tabbedPane.addTab("Utilization", utilizationPanel);
         
         JButton closeButton = new JButton("Close");
         closeButton.addActionListener(e -> detailsDialog.dispose());
@@ -326,7 +323,7 @@ public class VenueManagementDisplay extends JPanel {
         detailsDialog.add(closeButton, BorderLayout.SOUTH);
         
         detailsDialog.setVisible(true);
-    }
+}
     
     private void loadMoviesAtVenue(int venueId, DefaultListModel<String> model) {
         model.clear();
@@ -377,4 +374,38 @@ public class VenueManagementDisplay extends JPanel {
         }
         return true;
     }
+
+    private void loadVenueUtilization(int venueId, DefaultListModel<String> model) {
+    model.clear();
+    
+    double overallUtilization = venuesDao.getVenueUtilizationPercentage(venueId);
+    ArrayList<String> roomTypeUtilization = venuesDao.getUtilizationByRoomType(venueId);
+    
+    model.addElement("=== VENUE UTILIZATION ANALYSIS ===");
+    model.addElement("");
+    model.addElement(String.format("Overall Utilization: %.1f%%", overallUtilization));
+    model.addElement("");
+    
+
+    model.addElement("Utilization by Room Type:");
+    if (roomTypeUtilization.isEmpty()) {
+        model.addElement("  No room type data available");
+    } else {
+        for (String roomUtil : roomTypeUtilization) {
+            model.addElement("  " + roomUtil);
+        }
+    }
+    
+    model.addElement("");
+    
+    if (overallUtilization >= 80) {
+        model.addElement("Status: HIGH utilization - Venue is very busy");
+    } else if (overallUtilization >= 50) {
+        model.addElement("Status: MODERATE utilization - Good occupancy");
+    } else if (overallUtilization >= 20) {
+        model.addElement("Status: LOW utilization - Consider promotions");
+    } else {
+        model.addElement("Status: VERY LOW utilization - Needs attention");
+    }
+}
 }
