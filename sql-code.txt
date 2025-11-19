@@ -86,7 +86,7 @@ INSERT INTO Movies (movie_name, genre, age_rating, duration) VALUES
 ('Black Panther', 'Action', 'PG-13', 142),
 ('Star Wars: Revenge of the Sith', 'Sci-Fi', 'PG-13', 158),
 ('Jurassic World', 'Adventure', 'PG-13', 135),
-('Fast & Furious ', 'Action', 'PG-13', 140),
+('Fast & Furious', 'Action', 'PG-13', 140),
 ('Iron Man', 'Action', 'PG-13', 132),
 ('John Wick: Chapter 3 - Parabellum', 'Action', 'R', 128),
 ('The Conjuring', 'Horror', 'R', 118),
