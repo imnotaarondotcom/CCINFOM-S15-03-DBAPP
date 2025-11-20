@@ -114,38 +114,61 @@ public class TicketManagementDisplay extends JPanel {
         String sql = """
             SELECT t.ticket_no, m.movie_name, v.venue_name, r.room_name, 
                 s.seat_no, sc.screening_date, sc.screening_start_time, 
-                sc.price, t.ticket_status, t.customer_id
+                sc.price, t.ticket_status, t.customer_id, c.username
             FROM TicketBookings t
             JOIN Screenings sc ON t.screening_id = sc.screening_id
             JOIN Movies m ON sc.movie_id = m.movie_id
             JOIN Venues v ON sc.venue_id = v.venue_id
             JOIN Rooms r ON sc.room_id = r.room_id
             JOIN Seats s ON t.seat_id = s.seat_id
-            WHERE (t.customer_id = ?)
-            ORDER BY sc.screening_date DESC, sc.screening_start_time DESC
-        """;
+            JOIN Customers c ON t.customer_id = c.customer_id
+            """;
+
+        if (!"Admin".equals(accountType)) {
+            sql += " WHERE t.customer_id = ?";
+        }
+        
+        sql += " ORDER BY sc.screening_date DESC, sc.screening_start_time DESC";
 
         try (Connection conn = DBConnection.getConnection();
             PreparedStatement pst = conn.prepareStatement(sql)) {
-
-            pst.setInt(1, loggedCustomerId);
             
-            try (ResultSet rs = pst.executeQuery()) {
-                while (rs.next()) {
-                    String status = rs.getString("ticket_status");
-                    
-                    tableModel.addRow(new Object[]{
-                        rs.getInt("ticket_no"),
-                        rs.getString("movie_name"),
-                        rs.getString("venue_name"),
-                        rs.getString("room_name"),
-                        rs.getInt("seat_no"),
-                        rs.getDate("screening_date"),
-                        rs.getTime("screening_start_time"),
-                        String.format("PHP %.2f", rs.getDouble("price")),
-                        status
-                    });
-                }
+            // parameter for customer view
+            if (!"Admin".equals(accountType)) {
+                pst.setInt(1, loggedCustomerId);
+            }
+            
+            ResultSet rs = pst.executeQuery();
+
+            boolean hasData = false;
+            while (rs.next()) {
+                hasData = true;
+                String status = rs.getString("ticket_status");
+                String customerName = rs.getString("username");
+                
+                // for admins, show customer name in the movie column
+                String displayMovie = "Admin".equals(accountType) ? 
+                    rs.getString("movie_name") + " (" + customerName + ")" : 
+                    rs.getString("movie_name");
+                
+                tableModel.addRow(new Object[]{
+                    rs.getInt("ticket_no"),
+                    displayMovie,
+                    rs.getString("venue_name"),
+                    rs.getString("room_name"),
+                    rs.getInt("seat_no"),
+                    rs.getDate("screening_date"),
+                    rs.getTime("screening_start_time"),
+                    String.format("PHP %.2f", rs.getDouble("price")),
+                    status
+                });
+            }
+            
+            if (!hasData) {
+                JOptionPane.showMessageDialog(this, 
+                    "No tickets found.", 
+                    "No Tickets", 
+                    JOptionPane.INFORMATION_MESSAGE);
             }
 
         } catch (SQLException e) {
@@ -438,7 +461,7 @@ public class TicketManagementDisplay extends JPanel {
             );
             
             if (confirm == JOptionPane.YES_OPTION) {
-                // Block the screening by creating bookings for all seats
+                // block the screening by creating bookings for all seats
                 boolean success = blockAllSeats(screeningId, totalSeats);
                 if (success) {
                     JOptionPane.showMessageDialog(blockDialog, 
@@ -495,7 +518,7 @@ public class TicketManagementDisplay extends JPanel {
                 try (PreparedStatement pst = conn.prepareStatement(insertBookedSeatSQL)) {
                     for (int seatId : allSeatIds) {
                         pst.setInt(1, seatId);
-                        pst.setInt(2, loggedCustomerId); // Use current user ID
+                        pst.setInt(2, loggedCustomerId); // use current user ID
                         pst.setInt(3, screeningId);
                         pst.addBatch();
                     }
