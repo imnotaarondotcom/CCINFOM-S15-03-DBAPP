@@ -204,7 +204,7 @@ public class ReportsDisplay extends JPanel {
                 double totalRevenue = rs.getDouble("total_revenue");
                 double avgPrice = rs.getDouble("avg_ticket_price");
                 
-                reportTextArea.append(String.format("%-25s %-15d $%-14.2f $%-13.2f\n", 
+                reportTextArea.append(String.format("%-25s %-15d PHP %-14.2f PHP %-13.2f\n", 
                     branch, ticketsSold, totalRevenue, avgPrice));
                 
                 grandTotalRevenue += totalRevenue;
@@ -213,15 +213,15 @@ public class ReportsDisplay extends JPanel {
             }
             
             reportTextArea.append("-".repeat(70) + "\n");
-            reportTextArea.append(String.format("%-25s %-15d $%-14.2f\n", 
+            reportTextArea.append(String.format("%-25s %-15d PHP %-14.2f\n", 
                 "GRAND TOTAL", grandTotalTickets, grandTotalRevenue));
             
             // Update summary table
             tableModel.addRow(new Object[]{"Total Branches", branchCount});
             tableModel.addRow(new Object[]{"Total Tickets Sold", grandTotalTickets});
-            tableModel.addRow(new Object[]{"Total Revenue", String.format("$%.2f", grandTotalRevenue)});
+            tableModel.addRow(new Object[]{"Total Revenue", String.format("PHP %.2f", grandTotalRevenue)});
             tableModel.addRow(new Object[]{"Average Ticket Price", 
-                String.format("$%.2f", grandTotalTickets > 0 ? grandTotalRevenue / grandTotalTickets : 0)});
+                String.format("PHP %.2f", grandTotalTickets > 0 ? grandTotalRevenue / grandTotalTickets : 0)});
             
         } catch (SQLException e) {
             showError("Error generating ticket revenue report: " + e.getMessage());
@@ -267,7 +267,7 @@ public class ReportsDisplay extends JPanel {
                 double spent = rs.getDouble("total_spent");
                 int transactionDays = rs.getInt("transaction_days");
                 
-                reportTextArea.append(String.format("%-25s %-15d $%-14.2f %-15d\n", 
+                reportTextArea.append(String.format("%-25s %-15d PHP %-14.2f %-15d\n", 
                     customer, tickets, spent, transactionDays));
                 
                 totalCustomers++;
@@ -277,13 +277,13 @@ public class ReportsDisplay extends JPanel {
             }
             
             reportTextArea.append("-".repeat(70) + "\n");
-            reportTextArea.append(String.format("%-25s %-15d $%-14.2f\n", 
+            reportTextArea.append(String.format("%-25s %-15d PHP %-14.2f\n", 
                 "TOTAL (" + totalCustomers + " customers)", totalTickets, totalRevenue));
             
             // Update summary table
             tableModel.addRow(new Object[]{"Active Customers", totalCustomers});
             tableModel.addRow(new Object[]{"Total Tickets Purchased", totalTickets});
-            tableModel.addRow(new Object[]{"Total Customer Revenue", String.format("$%.2f", totalRevenue)});
+            tableModel.addRow(new Object[]{"Total Customer Revenue", String.format("PHP %.2f", totalRevenue)});
             tableModel.addRow(new Object[]{"Avg Tickets per Customer", 
                 String.format("%.1f", totalCustomers > 0 ? (double)totalTickets / totalCustomers : 0)});
             tableModel.addRow(new Object[]{"Avg Transaction Days", 
@@ -343,7 +343,7 @@ public class ReportsDisplay extends JPanel {
                     genre = genre.substring(0, 14);
                 }
                 
-                reportTextArea.append(String.format("%-30s %-15s %-8s %-8d $%-11.2f %-12d\n", 
+                reportTextArea.append(String.format("%-30s %-15s %-8s %-8d PHP %-11.2f %-12d\n", 
                     movie, genre, rating, tickets, revenue, screenings));
                 
                 totalMovies++;
@@ -353,16 +353,16 @@ public class ReportsDisplay extends JPanel {
             }
             
             reportTextArea.append("-".repeat(95) + "\n");
-            reportTextArea.append(String.format("%-30s %-15s %-8s %-8d $%-11.2f %-12d\n", 
+            reportTextArea.append(String.format("%-30s %-15s %-8s %-8d PHP %-11.2f %-12d\n", 
                 "TOTAL (" + totalMovies + " movies)", "", "", totalTickets, totalRevenue, totalScreenings));
             
             // Update summary table
             tableModel.addRow(new Object[]{"Total Movies", totalMovies});
             tableModel.addRow(new Object[]{"Total Tickets Sold", totalTickets});
-            tableModel.addRow(new Object[]{"Total Revenue", String.format("$%.2f", totalRevenue)});
+            tableModel.addRow(new Object[]{"Total Revenue", String.format("PHP %.2f", totalRevenue)});
             tableModel.addRow(new Object[]{"Total Screenings", totalScreenings});
             tableModel.addRow(new Object[]{"Average Revenue per Movie", 
-                String.format("$%.2f", totalMovies > 0 ? totalRevenue / totalMovies : 0)});
+                String.format("PHP %.2f", totalMovies > 0 ? totalRevenue / totalMovies : 0)});
             tableModel.addRow(new Object[]{"Average Tickets per Screening", 
                 String.format("%.1f", totalScreenings > 0 ? (double)totalTickets / totalScreenings : 0)});
             
