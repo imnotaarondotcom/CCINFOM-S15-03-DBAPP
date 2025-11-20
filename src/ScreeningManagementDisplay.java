@@ -31,7 +31,12 @@ public class ScreeningManagementDisplay extends JPanel {
     
     private void initializeComponents() {
         // Header
-        JLabel header = new JLabel("Screenings Management", JLabel.CENTER);
+        JLabel header;
+        if ("Admin".equals(accountType))
+            header = new JLabel("Screenings Management", JLabel.CENTER);
+        else 
+            header = new JLabel("Screenings", JLabel.CENTER);
+
         header.setFont(new Font("Arial", Font.BOLD, 24));
         header.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
         
@@ -46,7 +51,7 @@ public class ScreeningManagementDisplay extends JPanel {
             if (!searchTerm.isEmpty()) {
                 searchScreeningsByMovie(searchTerm);
             } else {
-                loadScreeningData(); // Reload all if search is empty
+                loadScreeningData(); // reload all if search is empty
             }
         });
 
@@ -248,7 +253,7 @@ public class ScreeningManagementDisplay extends JPanel {
         JComboBox<String> venueCombo = new JComboBox<>();
         loadVenuesIntoCombo(venueCombo);
         
-        // Room selection (will be populated based on venue)
+        // Room selection
         JComboBox<String> roomCombo = new JComboBox<>();
         
         JTextField dateField = new JTextField();
@@ -354,7 +359,7 @@ public class ScreeningManagementDisplay extends JPanel {
                 if (success) {
                     JOptionPane.showMessageDialog(addDialog, "Screening added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
                     addDialog.dispose();
-                    loadScreeningData(); // Refresh the table
+                    loadScreeningData(); // refresh table
                 } else {
                     JOptionPane.showMessageDialog(addDialog, "Failed to add screening!", "Error", JOptionPane.ERROR_MESSAGE);
                 }

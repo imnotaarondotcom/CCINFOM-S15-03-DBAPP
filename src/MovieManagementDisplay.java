@@ -30,7 +30,7 @@ public class MovieManagementDisplay extends JPanel {
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Make table non-editable
+                return false;
             }
         };
         
@@ -53,7 +53,7 @@ public class MovieManagementDisplay extends JPanel {
             if (!searchTerm.isEmpty()) {
                 searchMovies(searchTerm);
             } else {
-                loadMovieData(); // Reload all if search is empty
+                loadMovieData(); // reload all if search is empty
             }
         });
         
@@ -84,7 +84,7 @@ public class MovieManagementDisplay extends JPanel {
         editButton.addActionListener(e -> editMovie());
         deleteButton.addActionListener(e -> deleteMovie());
         refreshButton.addActionListener(e -> {
-            searchField.setText(""); // Clear search field
+            searchField.setText(""); // clear search field
             loadMovieData();
         });
         backButton.addActionListener(e -> mainGUI.showScreen("ADMIN PANEL"));
@@ -172,7 +172,7 @@ public class MovieManagementDisplay extends JPanel {
             if (validateMovieInput(nameField.getText(), genreField.getText(), durationField.getText())) {
                 try {
                     Movie newMovie = new Movie(
-                        0, // ID will be auto-generated
+                        0, // ID will be auto generated
                         nameField.getText(),
                         genreField.getText(),
                         (String) ratingCombo.getSelectedItem(),

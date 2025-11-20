@@ -31,7 +31,7 @@ public class SeatManagementDisplay extends JPanel {
         
         roomComboBox = new JComboBox<>();
         roomComboBox.setPreferredSize(new Dimension(100, 25));
-        loadRoomIds(); // Populate with available room IDs
+        loadRoomIds(); // populate with available room IDs
         
         JButton loadSeatsButton = new JButton("Load Seats");
         loadSeatsButton.addActionListener(e -> loadSeatsForRoom());
@@ -159,7 +159,7 @@ public class SeatManagementDisplay extends JPanel {
                 if (success) {
                     JOptionPane.showMessageDialog(addDialog, 
                         count + " seats added successfully to Room " + roomId + "!");
-                    loadSeatsForRoom(); // Refresh the table
+                    loadSeatsForRoom(); // refresh table
                     addDialog.dispose();
                 } else {
                     JOptionPane.showMessageDialog(addDialog, "Failed to add seats!", 

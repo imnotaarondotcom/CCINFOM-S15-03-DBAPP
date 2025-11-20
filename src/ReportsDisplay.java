@@ -13,6 +13,7 @@ public class ReportsDisplay extends JPanel {
     private JTable reportTable;
     private DefaultTableModel tableModel;
     
+    // DAO instances
     private VenuesDao venuesDao;
     private CustomersDao customersDao;
     private MovieDao movieDao;
@@ -313,11 +314,30 @@ public class ReportsDisplay extends JPanel {
             ORDER BY total_revenue DESC
         """;
         
+        // FIXED SQL QUERY - Calculate revenue correctly from actual ticket sales
+        String fixedSql = """
+            SELECT 
+                m.movie_name,
+                m.genre,
+                m.age_rating,
+                COUNT(tb.ticket_no) AS tickets_sold,
+                COALESCE(SUM(
+                    (SELECT s2.price 
+                    FROM Screenings s2 
+                    WHERE s2.screening_id = tb.screening_id)
+                ), 0) AS total_revenue,
+                COUNT(DISTINCT s.screening_id) AS total_screenings
+            FROM Movies m
+            JOIN Screenings s ON m.movie_id = s.movie_id
+            LEFT JOIN TicketBookings tb ON s.screening_id = tb.screening_id AND tb.ticket_status = 'Booked'
+            GROUP BY m.movie_id, m.movie_name, m.genre, m.age_rating
+            ORDER BY total_revenue DESC
+        """;
+        
         try (Connection conn = DBConnection.getConnection();
             Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(sql)) {
+            ResultSet rs = stmt.executeQuery(fixedSql)) {  // Use the fixed SQL query
             
-            // Header with proper spacing
             reportTextArea.append(String.format("%-30s %-15s %-8s %-8s %-12s %s\n", 
                 "MOVIE", "GENRE", "RATING", "TICKETS", "REVENUE", "SCREENINGS"));
             reportTextArea.append("-".repeat(95) + "\n");

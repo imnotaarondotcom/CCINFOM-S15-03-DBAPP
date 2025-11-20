@@ -25,20 +25,57 @@ public class TicketDao {
         }
     }
 
-    // Refund a ticket
+     // Refund a ticket
     public void refundTicket(int ticketNo) {
-        String sql = "UPDATE TicketBookings SET ticket_status = 'Refunded' WHERE ticket_no = ?";
+        String refundSQL = """
+            UPDATE TicketBookings 
+            SET ticket_status = 'Refunded' 
+            WHERE ticket_no = ? AND ticket_status = 'Booked'
+        """;
         
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pst = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
             
-            pst.setInt(1, ticketNo);
-            int updated = pst.executeUpdate();
-            
-            if (updated > 0) {
-                System.out.println("Ticket refunded successfully!");
-            } else {
-                System.out.println("No ticket found with ticket_no: " + ticketNo);
+            try {
+                // get the ticket details to know how much to subtract from revenue
+                String getTicketSQL = """
+                    SELECT tb.screening_id, s.price 
+                    FROM TicketBookings tb
+                    JOIN Screenings s ON tb.screening_id = s.screening_id
+                    WHERE tb.ticket_no = ? AND tb.ticket_status = 'Booked'
+                """;
+                
+                int screeningId = -1;
+                double ticketPrice = 0;
+                
+                try (PreparedStatement pst = conn.prepareStatement(getTicketSQL)) {
+                    pst.setInt(1, ticketNo);
+                    try (ResultSet rs = pst.executeQuery()) {
+                        if (rs.next()) {
+                            screeningId = rs.getInt("screening_id");
+                            ticketPrice = rs.getDouble("price");
+                        } else {
+                            throw new SQLException("No booked ticket found with ticket_no: " + ticketNo);
+                        }
+                    }
+                }
+                
+                // update ticket status to Refunded
+                try (PreparedStatement pst = conn.prepareStatement(refundSQL)) {
+                    pst.setInt(1, ticketNo);
+                    int updated = pst.executeUpdate();
+                    
+                    if (updated > 0) {
+                        System.out.println("Ticket refunded successfully! Amount: PHP " + ticketPrice);
+                        conn.commit();
+                    } else {
+                        throw new SQLException("No ticket found with ticket_no: " + ticketNo);
+                    }
+                }
+                
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
             }
             
         } catch (SQLException e) {

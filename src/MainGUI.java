@@ -22,7 +22,6 @@ public class MainGUI extends JFrame {
         // Show login first
         mainPanel.add(new LoginDisplay(this), "LOGIN");
         
-        // Admin and customer displays will be created dynamically after login
         add(mainPanel);
         cardLayout.show(mainPanel, "LOGIN");
     }
@@ -36,7 +35,7 @@ public class MainGUI extends JFrame {
         this.currentUserType = user.getAccountType();
         this.currentUsername = user.getName();
         
-        // Remove existing admin/customer panels if they exist
+        // remove existing admin/customer panels
         Component[] components = mainPanel.getComponents();
         for (Component comp : components) {
             String name = ((JPanel)comp).getName();
@@ -45,7 +44,7 @@ public class MainGUI extends JFrame {
             }
         }
         
-        // Create and add the appropriate dashboard
+        // create and add the appropriate dashboard
         if ("Admin".equals(currentUserType)) {
             mainPanel.add(new AdminDisplay(this), "ADMIN PANEL");
         } else {
